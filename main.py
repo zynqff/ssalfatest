@@ -57,10 +57,4 @@ async def register_page(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
 # Вывод всех доступных путей в консоль при запуске для отладки
-@app.on_event("startup")
-async def print_routes():
-    print("--- СПИСОК ДОСТУПНЫХ ПУТЕЙ ---")
-    for route in app.routes:
-        print(f"Путь: {route.path} | Методы: {route.methods}")
-    print("------------------------------")
 
