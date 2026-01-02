@@ -1,1 +1,69 @@
 
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --neon-blue: #00d4ff;
+    --neon-purple: #9d50bb;
+}
+
+body {
+    background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%);
+    color: #e0e0e0;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Эффект жидкого стекла для карточек */
+.card, .navbar, .form-control {
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(15px) saturate(150%);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    transition: all 0.4s ease;
+}
+
+.card:hover {
+    border-color: var(--neon-blue) !important;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+    transform: translateY(-5px);
+}
+
+/* Стилизация текста и заголовков */
+h1, h2, h3, .navbar-brand {
+    background: linear-gradient(45deg, var(--neon-blue), var(--neon-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* Кнопки в стиле Liquid */
+.btn-primary {
+    background: linear-gradient(45deg, #6e48aa, #9d50bb) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 10px 25px !important;
+    text-transform: uppercase;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(157, 80, 187, 0.4);
+}
+
+.btn-primary:hover {
+    filter: brightness(1.2);
+    box-shadow: 0 0 25px rgba(157, 80, 187, 0.6);
+}
+
+/* Поля ввода */
+.form-control {
+    color: white !important;
+    border-radius: 10px !important;
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: var(--neon-blue) !important;
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5) !important;
+  }
