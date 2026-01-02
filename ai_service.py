@@ -8,9 +8,10 @@ async def analyze_poem_with_ai(prompt: str):
         "Content-Type": "application/json"
     }
     payload = {
-        "model": "llama3-8b-8192",
+        # Заменилиllama3-8b-8192 на llama-3.1-8b-instant
+        "model": "llama-3.1-8b-instant", 
         "messages": [
-            {"role": "system", "content": "Ты профессиональный литературовед и критик. Отвечай на русском языке."},
+            {"role": "system", "content": "Ты профессиональный литературовед и критик. Отвечай глубоко и на русском языке."},
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7
@@ -21,7 +22,6 @@ async def analyze_poem_with_ai(prompt: str):
             response = await client.post(url, headers=headers, json=payload, timeout=25.0)
             data = response.json()
             
-            # Проверка на наличие ошибки в ответе API
             if "error" in data:
                 return f"Ошибка API Groq: {data['error'].get('message', 'Неизвестная ошибка')}"
             
@@ -32,4 +32,4 @@ async def analyze_poem_with_ai(prompt: str):
             
         except Exception as e:
             return f"Ошибка соединения: {str(e)}"
-            
+    
