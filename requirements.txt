@@ -5,6 +5,7 @@ pydantic-settings
 python-dotenv
 jinja2
 python-multipart
+bcrypt==4.0.1
 passlib[bcrypt]
 python-jose[cryptography]
 httpx
