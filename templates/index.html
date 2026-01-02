@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Литературный ИИ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .chat-window { position: fixed; bottom: 20px; right: 20px; width: 300px; display: none; flex-direction: column; z-index: 1000; }
+        #chat-messages { height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; font-size: 0.9rem; }
+    </style>
+</head>
+<body class="container py-4">
+    <nav class="d-flex justify-content-between mb-4">
+        <h2>Моя Библиотека</h2>
+        <a href="/logout" class="btn btn-outline-danger">Выход</a>
+    </nav>
+
+    <div class="row">
+        {% for poem in poems %}
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ poem.title }}</h5>
+                    <p class="text-muted">{{ poem.author }}</p>
+                    <button class="btn btn-sm btn-primary" onclick="openChat({{ poem.id }}, '{{ poem.title }}')">Чат с критиком</button>
+                    <button class="btn btn-sm btn-outline-success" onclick="toggleRead('{{ poem.title }}')">Прочитано</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="aiChat" class="card chat-window shadow">
+        <div class="card-header bg-dark text-white d-flex justify-content-between">
+            <small id="chatPoemTitle">Критик</small>
+            <button onclick="closeChat()" class="btn-close btn-close-white"></button>
+        </div>
+        <div id="chat-messages"></div>
+        <div class="p-2">
+            <div class="input-group">
+                <input type="text" id="chatInput" class="form-control form-control-sm" placeholder="Спросить...">
+                <button class="btn btn-primary btn-sm" onclick="sendMsg()">></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let activeId = null;
+        function openChat(id, title) {
+            activeId = id;
+            document.getElementById('chatPoemTitle').innerText = title;
+            document.getElementById('aiChat').style.display = 'flex';
+        }
+        function closeChat() { document.getElementById('aiChat').style.display = 'none'; }
+        
+        async function sendMsg() {
+            const input = document.getElementById('chatInput');
+            const box = document.getElementById('chat-messages');
+            box.innerHTML += `<div><b>Вы:</b> ${input.value}</div>`;
+            
+            const res = await fetch('/poems/ask', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({poem_id: activeId, question: input.value})
+            });
+            const data = await res.json();
+            box.innerHTML += `<div class="text-primary"><b>Критик:</b> ${data.answer}</div>`;
+            input.value = '';
+            box.scrollTop = box.scrollHeight;
+        }
+
+        async function toggleRead(title) {
+            await fetch('/poems/toggle_read', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({title: title})
+            });
+            alert('Статус обновлен!');
+        }
+    </script>
+</body>
+              </html>
+  
