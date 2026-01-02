@@ -1,11 +1,20 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    DATABASE_URL: str
-    GROQ_API_KEY: str # Новое поле
-    SECRET_KEY: str
-    ALGORITHM: str = "HS256"
+    # Параметры базы данных
+    DATABASE_URL: str = "sqlite:///./database.db"
     
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding='utf-8')
+    # Параметры безопасности (JWT)
+    SECRET_KEY: str = "super-secret-key-change-me-in-production"
+    ALGORITHM: str = "HS256"
+    # ЭТОЙ СТРОКИ НЕ ХВАТАЛО:
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30 
+    
+    # API ключи
+    GROQ_API_KEY: str = ""
+
+    class Config:
+        env_file = ".env"
 
 settings = Settings()
+
