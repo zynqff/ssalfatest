@@ -180,10 +180,20 @@ async def add_poem_post(
     content: str = Form(...), 
     db: Session = Depends(get_db)
 ):
-    new_poem = models.Poem(title=title, author=author, content=content)
-    db.add(new_poem)
-    db.commit()
-    return RedirectResponse(url="/admin", status_code=303)
+    try:
+        new_poem = models.Poem(
+            title=title, 
+            author=author, 
+            content=content
+        )
+        db.add(new_poem)
+        db.commit()
+        return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+    except Exception as e:
+        db.rollback()
+        print(f"Ошибка при добавлении: {e}")
+        return "Ошибка базы данных. Возможно, нужно удалить старый файл .db и перезапустить сервер."
+    
 
 # --- УДАЛЕНИЕ ---
 @app.get("/poem/delete/{poem_id}")
