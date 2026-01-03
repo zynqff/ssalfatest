@@ -1,16 +1,13 @@
+
 {% extends "base.html" %}
-
-{% block title %}Главная | Poetry AI{% endblock %}
-
 {% block content %}
 <div class="row g-4">
     {% for poem in poems %}
     <div class="col-6 col-md-4 col-lg-3">
-        <div class="poem-card text-center p-4" style="background: var(--glass); border: 1px solid var(--border); border-radius: 30px; backdrop-filter: blur(10px);">
-            <h5 style="color: var(--accent);" class="text-truncate">{{ poem.title }}</h5>
+        <div class="p-4 text-center" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 30px; backdrop-filter: blur(10px);">
+            <h5 class="text-truncate" style="color: var(--accent);">{{ poem.title }}</h5>
             <p class="small opacity-50">{{ poem.author }}</p>
-            <button class="btn-auth w-100 mt-2" onclick="openPoem('{{ poem.id }}')">Читать</button>
-            
+            <button class="btn-custom w-100 mt-2" onclick="openPoem('{{ poem.id }}')">Читать</button>
             <script id="data-{{ poem.id }}" type="application/json">
                 {"title": "{{ poem.title }}", "author": "{{ poem.author }}", "content": {{ poem.content | tojson }}}
             </script>
@@ -18,14 +15,23 @@
     </div>
     {% else %}
     <div class="col-12 text-center py-5">
-        <h4 class="opacity-50">Лента пуста. Дождитесь добавления стихов администратором.</h4>
+        <h4 class="opacity-50">Стихотворения пока отсутствуют. Дождитесь их добавления администратором.</h4>
     </div>
     {% endfor %}
 </div>
 
 <div class="modal fade" id="poemModal" tabindex="-1">
-    <div class="modal-content shadow-lg" style="border-radius: 35px; background: rgba(13,23,35,0.95); backdrop-filter: blur(20px); border: 1px solid var(--border);">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-4" style="background: rgba(13,23,35,0.98); border-radius: 35px; border: 1px solid var(--border); color: white;">
+            <div class="d-flex justify-content-between mb-2">
+                <h4 id="m-title" style="color: var(--accent);"></h4>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div id="m-author" class="small text-info mb-3"></div>
+            <div id="m-text" style="white-space: pre-wrap; max-height: 40vh; overflow-y: auto;" class="mb-4"></div>
+            <a id="m-ai-link" href="#" class="btn-custom text-center">🧠 ИИ Анализ</a>
         </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -33,8 +39,11 @@
 <script>
     function openPoem(id) {
         const data = JSON.parse(document.getElementById('data-' + id).textContent);
-        // Логика открытия модалки...
+        document.getElementById('m-title').innerText = data.title;
+        document.getElementById('m-author').innerText = 'Автор: ' + data.author;
+        document.getElementById('m-text').innerText = data.content;
+        document.getElementById('m-ai-link').href = '/poem/' + id;
+        new bootstrap.Modal(document.getElementById('poemModal')).show();
     }
 </script>
 {% endblock %}
-
