@@ -1,13 +1,33 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="glass-panel p-4" style="background: var(--glass); border-radius: 30px; border: 1px solid var(--border);">
-    <div class="d-flex justify-content-between mb-4">
+<div class="p-4" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 30px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Управление</h2>
-        <a href="/poem/add" class="btn-auth">+ Добавить</a>
+        <a href="/poem/add" class="btn-custom">+ Добавить</a>
     </div>
-    <div class="table-responsive">
-        </div>
+    <div class="table-responsive" style="border-radius: 20px; overflow: hidden;">
+        <table class="table table-dark table-hover m-0">
+            <thead class="table-secondary">
+                <tr>
+                    <th>Название</th>
+                    <th>Автор</th>
+                    <th class="text-end">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for poem in poems %}
+                <tr>
+                    <td>{{ poem.title }}</td>
+                    <td>{{ poem.author }}</td>
+                    <td class="text-end">
+                        <a href="/poem/edit/{{ poem.id }}" class="btn btn-sm btn-outline-info me-2">✏️</a>
+                        <a href="/poem/delete/{{ poem.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить?')">🗑️</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}
 
