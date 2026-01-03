@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавить стих</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #0d1117; color: white; display: flex; align-items: center; min-height: 100vh; }
+        .glass-form { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 25px; padding: 40px; width: 100%; max-width: 500px; margin: auto; }
+        .form-control { background: rgba(255,255,255,0.05) !important; color: white !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 12px; }
+        .btn-pub { background: linear-gradient(135deg, #00d4ff, #9d50bb); border: none; color: white; padding: 12px; font-weight: 700; border-radius: 12px; }
+    </style>
+</head>
+<body>
+    <div class="glass-form">
+        <h3 class="text-center mb-4">Новый стих</h3>
+        <form action="/poem/add" method="post">
+            <input type="text" name="title" class="form-control mb-3" placeholder="Название" required>
+            <input type="text" name="author" class="form-control mb-3" placeholder="Автор" required>
+            <textarea name="content" class="form-control mb-4" rows="8" placeholder="Текст стиха..." required></textarea>
+            <button type="submit" class="btn btn-pub w-100">Опубликовать</button>
+        </form>
+    </div>
+</body>
+</html>
+
