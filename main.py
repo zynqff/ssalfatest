@@ -6,7 +6,13 @@ from sqlalchemy.orm import Session
 import models
 from database import engine, get_db
 from passlib.context import CryptContext
-from ai_service import analyze_poem_with_ai  # Импортируем твой файл
+from ai_service import analyze_poem_with_ai 
+from pydantic import BaseModel
+
+class QuestionRequest(BaseModel):
+    question: str
+    poem_id: int
+# Импортируем твой файл
 # Инициализация базы данных
 models.Base.metadata.create_all(bind=engine)
 
@@ -228,3 +234,14 @@ async def poem_detail(poem_id: int, request: Request, db: Session = Depends(get_
         "ai_analysis": ai_response,
         "user": current_user
     })
+@app.post("/ai-ask")
+async def ai_ask(data: QuestionRequest, db: Session = Depends(get_db)):
+    poem = db.query(models.Poem).filter(models.Poem.id == data.poem_id).first()
+    
+    # Формируем контекст: текст стиха + твой новый вопрос
+    full_prompt = f"Контекст (стих): {poem.content}\n\nВопрос пользователя: {data.question}"
+    
+    # Используем твою функцию из ai_service.py
+    answer = await analyze_poem_with_ai(full_prompt) 
+    
+    return {"answer": answer}
