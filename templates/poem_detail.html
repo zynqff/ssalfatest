@@ -1,17 +1,84 @@
 {% extends "base.html" %}
 
+{% block title %}{{ poem.title }} | Анализ ИИ{% endblock %}
+
 {% block extra_style %}
 <style>
-    .chat-area { height: 60vh; overflow-y: auto; padding: 20px; background: var(--glass); border-radius: 25px; }
-    .msg { padding: 15px; border-radius: 20px; margin-bottom: 10px; max-width: 80%; }
-    .ai-msg { background: rgba(157, 80, 187, 0.1); border: 1px solid rgba(157, 80, 187, 0.2); }
+    .chat-container { height: 65vh; display: flex; flex-direction: column; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 30px; overflow: hidden; }
+    .chat-messages { flex-grow: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
+    .msg { padding: 15px 20px; border-radius: 20px; max-width: 85%; line-height: 1.5; }
+    .ai-msg { background: rgba(0, 212, 255, 0.07); border: 1px solid rgba(0, 212, 255, 0.2); align-self: flex-start; color: #e0faff; }
+    .user-msg { background: linear-gradient(135deg, var(--accent), var(--secondary)); align-self: flex-end; color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+    .chat-input-area { padding: 20px; background: rgba(13,17,23,0.6); border-top: 1px solid var(--border); }
+    .custom-input { background: rgba(255,255,255,0.05) !important; border: 1px solid var(--border) !important; color: white !important; border-radius: 20px !important; padding: 12px 20px !important; }
 </style>
 {% endblock %}
 
 {% block content %}
-<h2 class="mb-4">{{ poem.title }}</h2>
-<div class="chat-area" id="chat-window">
-    <div class="msg ai-msg"><strong>Анализ:</strong><br>{{ ai_analysis }}</div>
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="p-4" style="background: var(--glass); border: 1px solid var(--border); border-radius: 30px;">
+            <h3 style="color: var(--accent);">{{ poem.title }}</h3>
+            <p class="text-info small mb-3">Автор: {{ poem.author }}</p>
+            <div style="white-space: pre-wrap; font-style: italic; opacity: 0.8; font-size: 0.95rem;">{{ poem.content }}</div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="chat-container">
+            <div class="chat-messages" id="chat-box">
+                <div class="msg ai-msg">
+                    <strong>Анализ ИИ:</strong><br>
+                    {{ ai_analysis }}
+                </div>
+            </div>
+            
+            <div class="chat-input-area">
+                <div class="input-group">
+                    <input type="text" id="user-question" class="form-control custom-input" placeholder="Спросите ИИ об этом стихе...">
+                    <button class="btn-custom ms-2" onclick="sendQuestion()">Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    async function sendQuestion() {
+        const input = document.getElementById('user-question');
+        const chatBox = document.getElementById('chat-box');
+        const question = input.value.trim();
+        
+        if (!question) return;
+
+        // 1. Отображаем вопрос пользователя
+        chatBox.innerHTML += `<div class="msg user-msg">${question}</div>`;
+        input.value = '';
+        chatBox.scrollTo(0, chatBox.scrollHeight);
+
+        // 2. Отправляем запрос на сервер
+        try {
+            const response = await fetch('/ai-ask', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ "question": question, "poem_id": {{ poem.id }} })
+            });
+            const data = await response.json();
+            
+            // 3. Отображаем ответ ИИ
+            chatBox.innerHTML += `<div class="msg ai-msg"><strong>Groq AI:</strong><br>${data.answer}</div>`;
+            chatBox.scrollTo(0, chatBox.scrollHeight);
+        } catch (e) {
+            chatBox.innerHTML += `<div class="msg ai-msg text-danger">Ошибка связи с сервером.</div>`;
+        }
+    }
+
+    // Отправка по нажатию Enter
+    document.getElementById('user-question').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') sendQuestion();
+    });
+</script>
 {% endblock %}
 
