@@ -46,13 +46,15 @@ async def login_post(
 ):
     user = db.query(models.User).filter(models.User.username == username).first()
     
+    # Проверяем логин и пароль
     if not user or not verify_password(password, user.password):
         return templates.TemplateResponse("login.html", {
             "request": request, 
-            "error": "Неверный логин или пароль"
+            "error": "Неверный логин или пароль",
+            "msg_type": "error" # Красный цвет
         })
     
-    # Успешный вход (ставим временную куку для примера)
+    # Успешный вход
     response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(key="user_id", value=str(user.id))
     return response
@@ -74,10 +76,11 @@ async def register_post(
         if existing_user:
             return templates.TemplateResponse("register.html", {
                 "request": request, 
-                "error": "Этот логин уже занят"
+                "error": "Этот логин уже занят",
+                "msg_type": "error"
             })
 
-        # Создание нового пользователя с хешированием
+        # Создание нового пользователя
         new_user = models.User(
             username=username, 
             password=get_password_hash(password)
@@ -85,9 +88,11 @@ async def register_post(
         db.add(new_user)
         db.commit()
         
+        # Регистрация прошла успешно -> на страницу входа с ЗЕЛЕНЫМ текстом
         return templates.TemplateResponse("login.html", {
             "request": request, 
-            "error": "Регистрация успешна! Теперь войдите."
+            "error": "Регистрация успешна! Теперь войдите.",
+            "msg_type": "success" # Тот самый зеленый цвет
         })
         
     except Exception as e:
@@ -95,12 +100,12 @@ async def register_post(
         print(f"Database error: {e}")
         return templates.TemplateResponse("register.html", {
             "request": request, 
-            "error": "Ошибка базы данных. Попробуйте другой логин."
+            "error": "Ошибка базы данных. Попробуйте другой логин.",
+            "msg_type": "error"
         })
 
 @app.get("/profile")
 async def profile_page(request: Request, db: Session = Depends(get_db)):
-    # Простейшая проверка авторизации через куку
     user_id = request.cookies.get("user_id")
     if not user_id:
         return RedirectResponse(url="/login")
@@ -117,4 +122,4 @@ async def logout():
     response = RedirectResponse(url="/login")
     response.delete_cookie("user_id")
     return response
-                                                        
+                              
