@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 import models
 from database import engine, get_db
 from passlib.context import CryptContext
-
+from ai_service import analyze_poem_with_ai  # Импортируем твой файл
 # Инициализация базы данных
 models.Base.metadata.create_all(bind=engine)
 
@@ -203,4 +203,28 @@ async def delete_poem(poem_id: int, db: Session = Depends(get_db)):
         db.delete(poem)
         db.commit()
     return RedirectResponse(url="/admin", status_code=303)
+
+@app.get("/poem/{poem_id}")
+async def poem_detail(poem_id: int, request: Request, db: Session = Depends(get_db)):
+    poem = db.query(models.Poem).filter(models.Poem.id == poem_id).first()
+    if not poem:
+        return "Стих не найден", 404
+
+    # Формируем запрос для Groq на основе данных из БД
+    prompt = f"Проанализируй стихотворение '{poem.title}' автора {poem.author}. Текст:\n\n{poem.content}"
     
+    # Вызываем твою функцию из ai_service.py
+    ai_response = await analyze_poem_with_ai(prompt)
+
+    # Получаем юзера для корректного отображения навбара
+    user_id = request.cookies.get("user_id")
+    current_user = None
+    if user_id:
+        current_user = db.query(models.User).filter(models.User.id == int(user_id)).first()
+
+    return templates.TemplateResponse("poem_detail.html", {
+        "request": request,
+        "poem": poem,
+        "ai_analysis": ai_response,
+        "user": current_user
+    })
