@@ -6,61 +6,108 @@
     <title>Poetry AI | Главная</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        :root { --accent: #00d4ff; --secondary: #9d50bb; --glass: rgba(255, 255, 255, 0.03); --border: rgba(255, 255, 255, 0.1); }
-        body { background: #0d1117; color: white; font-family: 'Segoe UI', sans-serif; min-height: 100vh; overflow-x: hidden; }
-        
-        .glow-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; 
-            background: radial-gradient(circle at 20% 30%, rgba(0, 212, 255, 0.08), transparent 40%), 
-                        radial-gradient(circle at 80% 70%, rgba(157, 80, 187, 0.08), transparent 40%); }
+        :root {
+            --accent: #00d4ff;
+            --secondary: #9d50bb;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+        }
 
-        .navbar-glass { background: rgba(13, 17, 23, 0.7); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 15px 0; sticky; top: 0; z-index: 1000; }
-        .brand { font-weight: 800; font-size: 1.6rem; background: linear-gradient(to right, var(--accent), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-decoration: none; }
+        body {
+            background: #0d1117;
+            color: white;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+        }
 
-        /* Компактная карточка (Плитка) */
+        /* Сильно закругленная верхняя панель */
+        .navbar-glass {
+            background: rgba(13, 17, 23, 0.7);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 0;
+            border-radius: 0 0 30px 30px; /* Закругление низа панели */
+            margin-bottom: 20px;
+        }
+
+        /* Карточка-плитка */
         .poem-card {
-            background: var(--glass); backdrop-filter: blur(25px); border: 1px solid var(--border);
-            border-radius: 24px; padding: 20px; text-align: center; transition: 0.3s;
+            background: var(--glass);
+            backdrop-filter: blur(25px);
+            border: 1px solid var(--border);
+            border-radius: 30px; /* Максимальное закругление */
+            padding: 20px;
+            transition: 0.3s;
+            text-align: center;
         }
-        .poem-card:hover { transform: translateY(-5px); border-color: var(--accent); }
-        .poem-title { color: var(--accent); font-weight: 700; font-size: 1.2rem; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .btn-main-read {
+        .poem-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-5px);
+        }
+
+        .btn-read-custom {
             background: linear-gradient(135deg, var(--accent), var(--secondary));
-            border: none; color: white; font-weight: 700; border-radius: 14px; padding: 10px; width: 100%; margin-top: 15px;
+            border: none;
+            color: white;
+            font-weight: 700;
+            border-radius: 18px;
+            padding: 10px 20px;
+            width: 100%;
+            margin-top: 15px;
         }
 
-        /* Стиль Модального окна */
-        .modal-content { background: rgba(13, 17, 23, 0.9) !important; backdrop-filter: blur(30px); border: 1px solid var(--border) !important; border-radius: 30px !important; color: white; }
-        .poem-full-view { white-space: pre-wrap; font-size: 1.1rem; line-height: 1.6; max-height: 50vh; overflow-y: auto; margin: 20px 0; padding-right: 10px; }
-        
-        .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-tool-modal { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: white; border-radius: 12px; padding: 10px; }
-        .btn-ai-gold { grid-column: span 2; background: linear-gradient(135deg, var(--accent), var(--secondary)); border: none; font-weight: 700; padding: 12px; border-radius: 15px; color: white; text-decoration: none; text-align: center; }
+        /* Модальное окно (Мини-окно) */
+        .modal-content {
+            background: rgba(13, 17, 23, 0.95) !important;
+            backdrop-filter: blur(25px);
+            border: 1px solid var(--border) !important;
+            border-radius: 35px !important; /* Очень круглое окно */
+            overflow: hidden;
+            color: white;
+        }
+
+        .full-text-scroll {
+            white-space: pre-wrap;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            max-height: 45vh;
+            overflow-y: auto;
+            margin: 20px 0;
+            padding-right: 10px;
+        }
+
+        /* Состояние пустой ленты */
+        .empty-box {
+            background: var(--glass);
+            border: 1px dashed var(--border);
+            border-radius: 30px;
+            padding: 60px 20px;
+            text-align: center;
+            margin-top: 50px;
+        }
     </style>
 </head>
 <body>
-    <div class="glow-bg"></div>
     <nav class="navbar-glass">
-        <div class="container d-flex justify-content-between align-items-center">
-            <a href="/" class="brand">POETRY AI</a>
-            <div>
-                {% if user %}<a href="/profile" class="btn btn-sm btn-outline-info">Профиль</a>
-                {% if user.is_admin %}<a href="/admin" class="btn btn-sm btn-warning ms-2">Админка</a>{% endif %}
-                {% else %}<a href="/login" class="btn btn-sm btn-primary">Войти</a>{% endif %}
-            </div>
+        <div class="container d-flex justify-content-between align-items-center px-4">
+            <a href="/" style="font-weight: 800; font-size: 1.4rem; color: var(--accent); text-decoration: none;">POETRY AI</a>
+            {% if user and user.is_admin %}
+                <a href="/admin" class="btn btn-sm btn-outline-warning" style="border-radius: 12px;">Админка</a>
+            {% endif %}
         </div>
     </nav>
 
-    <div class="container mt-5">
+    <div class="container">
         <div class="row g-3">
             {% for poem in poems %}
             <div class="col-6 col-md-4 col-lg-3">
                 <div class="poem-card">
-                    <div class="poem-title">{{ poem.title }}</div>
+                    <h5 class="text-truncate" style="color: var(--accent);">{{ poem.title }}</h5>
                     <div class="small opacity-50">{{ poem.author }}</div>
-                    <button class="btn-main-read" onclick="openPoem(`{{ poem.id }}`)">Читать</button>
+                    <button class="btn-read-custom" onclick="openPoem('{{ poem.id }}')">Читать</button>
                     
-                    <script id="poem-data-{{ poem.id }}" type="application/json">
+                    <script id="data-{{ poem.id }}" type="application/json">
                         {
                             "title": "{{ poem.title }}",
                             "author": "{{ poem.author }}",
@@ -69,25 +116,28 @@
                     </script>
                 </div>
             </div>
+            {% else %}
+            <div class="col-12">
+                <div class="empty-box">
+                    <h4 class="opacity-75">Лента пуста</h4>
+                    <p class="opacity-50">Стихотворения пока отсутствуют. Дождитесь их добавления администратором.</p>
+                </div>
+            </div>
             {% endfor %}
         </div>
     </div>
 
     <div class="modal fade" id="poemModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content p-3">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title" id="m-title" style="color: var(--accent)"></h5>
+            <div class="modal-content p-4">
+                <div class="d-flex justify-content-between">
+                    <h4 id="m-title" style="color: var(--accent);"></h4>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <div id="m-author" class="small text-secondary mb-3"></div>
-                    <div id="m-text" class="poem-full-view"></div>
-                    <div class="modal-actions">
-                        <button class="btn-tool-modal">📌 Закрепить</button>
-                        <button class="btn-tool-modal">✔️ Прочитано</button>
-                        <a id="m-ai-link" href="#" class="btn-ai-gold mt-2">🧠 ИИ АНАЛИЗ (Groq)</a>
-                    </div>
+                <div id="m-author" class="small text-info mb-3"></div>
+                <div id="m-text" class="full-text-scroll"></div>
+                <div class="d-grid gap-2">
+                    <a id="m-ai-link" href="#" class="btn-read-custom text-center text-decoration-none">🧠 ИИ Анализ</a>
                 </div>
             </div>
         </div>
@@ -96,7 +146,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function openPoem(id) {
-            const data = JSON.parse(document.getElementById('poem-data-' + id).textContent);
+            const data = JSON.parse(document.getElementById('data-' + id).textContent);
             document.getElementById('m-title').innerText = data.title;
             document.getElementById('m-author').innerText = 'Автор: ' + data.author;
             document.getElementById('m-text').innerText = data.content;
@@ -105,5 +155,5 @@
         }
     </script>
 </body>
-</html>
-
+    </html>
+        
