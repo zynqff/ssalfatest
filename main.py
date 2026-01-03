@@ -127,30 +127,25 @@ async def logout():
 @app.post("/profile/update")
 async def update_profile(
     request: Request, 
-    user_data: str = Form(...), 
-    show_all_tab: bool = Form(False), # False — значение по умолчанию, если галочка не стоит
+    user_data: str = Form(""), # По умолчанию пустая строка, чтобы не было ошибки "Field required"
+    show_all_tab: bool = Form(False), 
     db: Session = Depends(get_db)
 ):
-    # 1. Проверяем авторизацию через куки
     user_id = request.cookies.get("user_id")
     if not user_id:
-        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url="/login", status_code=303)
 
-    # 2. Ищем пользователя в базе
     user = db.query(models.User).filter(models.User.id == int(user_id)).first()
     if user:
-        # 3. Обновляем данные
         user.user_data = user_data
         user.show_all_tab = show_all_tab
         db.commit()
 
-    # 4. Возвращаемся обратно в профиль с сообщением об успехе
     return templates.TemplateResponse("profile.html", {
         "request": request,
         "user_data": user.user_data,
         "show_all_tab": user.show_all_tab,
-        "error": "Изменения успешно сохранены!",
-        "msg_type": "success" # Чтобы надпись была зеленой
+        "error": "Профиль успешно обновлен!",
+        "msg_type": "success"
     })
     
-                              
