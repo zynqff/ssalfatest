@@ -2,110 +2,157 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Литературный ИИ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лента | Poetry AI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .poem-card { transition: 0.3s; border-left: 5px solid transparent; }
-        .poem-card.read { border-left-color: #28a745; opacity: 0.8; }
-        .poem-card.pinned { border-left-color: #ffc107; background: #fffdf5; }
-        .chat-box { position: fixed; bottom: 20px; right: 20px; width: 350px; height: 500px; display: none; z-index: 1000; }
-        #chat-content { height: 350px; overflow-y: auto; background: #fdfdfd; padding: 15px; }
+        :root {
+            --accent: #00d4ff;
+            --secondary: #9d50bb;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background: #0d1117;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            padding-bottom: 50px;
+        }
+
+        /* Декоративные пятна на фоне */
+        .bg-glow-1 {
+            position: fixed; top: -10%; left: -10%; width: 50vw; height: 50vw;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+            z-index: -1;
+        }
+        .bg-glow-2 {
+            position: fixed; bottom: -10%; right: -10%; width: 50vw; height: 50vw;
+            background: radial-gradient(circle, rgba(157, 80, 187, 0.1) 0%, transparent 70%);
+            z-index: -1;
+        }
+
+        /* Навигация */
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px 0;
+            margin-bottom: 40px;
+        }
+
+        .brand-text {
+            font-weight: 800;
+            background: linear-gradient(to right, var(--accent), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+            font-size: 1.5rem;
+        }
+
+        /* Стеклянные карточки */
+        .poem-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+            height: 100%;
+            transition: 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .poem-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.15);
+        }
+
+        .poem-title {
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .poem-content {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+
+        /* Кнопка */
+        .btn-action {
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            border: none;
+            color: white;
+            border-radius: 12px;
+            padding: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .btn-action:hover {
+            filter: brightness(1.2);
+            color: white;
+        }
+
+        .btn-profile {
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            border-radius: 10px;
+            padding: 5px 15px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: 0.3s;
+        }
+
+        .btn-profile:hover {
+            background: var(--accent);
+            color: #0d1117;
+        }
     </style>
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-dark bg-dark mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="#">PoetryAI Beta</a>
-            <div>
-                <a href="/profile" class="btn btn-outline-light btn-sm">Профиль</a>
-                <a href="/logout" class="btn btn-danger btn-sm">Выход</a>
-            </div>
+<body>
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+
+    <nav class="navbar-custom">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a href="/" class="brand-text">POETRY AI</a>
+            <a href="/profile" class="btn-profile">Профиль</a>
         </div>
     </nav>
-<div style="position: fixed; top: -10%; left: -10%; width: 40%; height: 40%; background: radial-gradient(circle, rgba(0,212,255,0.15) 0%, transparent 70%); z-index: -1;"></div>
-<div style="position: fixed; bottom: -10%; right: -10%; width: 50%; height: 50%; background: radial-gradient(circle, rgba(157,80,187,0.15) 0%, transparent 70%); z-index: -1;"></div>
-    
+
     <div class="container">
-        <div class="row">
+        <h2 class="text-center mb-5 fw-bold">Ваша лента</h2>
+        
+        <div class="row g-4">
             {% for poem in poems %}
-            <div class="col-md-6 mb-4">
-                <div class="card poem-card shadow-sm {% if poem.title in read_list %}read{% endif %} {% if poem.title == pinned %}pinned{% endif %}">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ poem.title }} {% if poem.title == pinned %}📌{% endif %}</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">{{ poem.author }}</h6>
-                        <div class="mt-3">
-                            <button class="btn btn-primary btn-sm" onclick="startChat({{ poem.id }}, '{{ poem.title }}')">Чат с критиком</button>
-                            <button class="btn btn-outline-success btn-sm" onclick="markRead('{{ poem.title }}')">✓ Прочитано</button>
-                            <button class="btn btn-outline-warning btn-sm" onclick="pinPoem('{{ poem.title }}')">Закрепить</button>
-                        </div>
-                    </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="poem-card">
+                    <h4 class="poem-title">{{ poem.title }}</h4>
+                    <p class="poem-content">
+                        {{ poem.content[:150] }}{% if poem.content|length > 150 %}...{% endif %}
+                    </p>
+                    <a href="/poem/{{ poem.id }}" class="btn-action">Открыть анализ</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12 text-center">
+                <div class="poem-card py-5">
+                    <p class="fs-5 opacity-50">Здесь пока пусто. Добавьте свои первые стихи!</p>
                 </div>
             </div>
             {% endfor %}
         </div>
     </div>
-
-    <div id="aiChat" class="card chat-box shadow-lg">
-        <div class="card-header bg-primary text-white d-flex justify-content-between">
-            <span id="activePoemTitle">Критик</span>
-            <button onclick="document.getElementById('aiChat').style.display='none'" class="btn-close btn-close-white"></button>
-        </div>
-        <div id="chat-content"></div>
-        <div class="card-footer">
-            <div class="input-group">
-                <input type="text" id="chatInput" class="form-control" placeholder="Спросите о смысле...">
-                <button class="btn btn-primary" onclick="sendToAI()">Отправить</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let currentPoemId = null;
-
-        function startChat(id, title) {
-            currentPoemId = id;
-            document.getElementById('activePoemTitle').innerText = title;
-            document.getElementById('aiChat').style.display = 'flex';
-            document.getElementById('chat-content').innerHTML = `<div class="text-muted small">Вы обсуждаете: ${title}. Задайте любой вопрос литературоведу.</div>`;
-        }
-
-        async function sendToAI() {
-            const input = document.getElementById('chatInput');
-            const content = document.getElementById('chat-content');
-            const q = input.value;
-            if(!q) return;
-
-            content.innerHTML += `<div class="mb-2 text-end"><b>Вы:</b> <br>${q}</div>`;
-            input.value = '';
-
-            const res = await fetch('/poems/ask', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({poem_id: currentPoemId, question: q})
-            });
-            const data = await res.json();
-            content.innerHTML += `<div class="mb-2 bg-light p-2 rounded"><b>Критик:</b> <br>${data.answer}</div>`;
-            content.scrollTop = content.scrollHeight;
-        }
-
-        async function markRead(title) {
-            await fetch('/poems/toggle_read', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({title: title})
-            });
-            location.reload();
-        }
-
-        async function pinPoem(title) {
-            await fetch('/poems/toggle_pin', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({title: title})
-            });
-            location.reload();
-        }
-    </script>
 </body>
-                </html>
-    
+</html>
+
