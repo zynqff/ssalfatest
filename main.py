@@ -57,31 +57,7 @@ async def index_page(request: Request, db: Session = Depends(get_db)):
         "user": current_user
     })
 
-@app.get("/poem/{poem_id}")
-async def poem_detail(poem_id: int, request: Request, db: Session = Depends(get_db)):
-    current_user = await get_current_user(request, db)
-    poem = db.query(models.Poem).filter(models.Poem.id == poem_id).first()
-    if not poem:
-        return RedirectResponse(url="/", status_code=303)
-    
-    # Даем DeepSeek контекст, чтобы он не выдумывал текст сам
-    prompt = (
-        f"Ты — эксперт-литературовед. Проанализируй следующее произведение.\n"
-        f"Автор: {poem.author}\nНазвание: {poem.title}\n"
-        f"Текст:\n{poem.content}\n"
-        f"Дай краткий, но глубокий анализ стиля и смысла."
-    )
-    
-    full_response = await analyze_poem_with_ai(prompt)
-    # Убираем технические мысли <think>, если они есть
-    clean_analysis = re.sub(r'<think>.*?</think>', '', full_response, flags=re.DOTALL).strip()
 
-    return templates.TemplateResponse("poem_detail.html", {
-        "request": request, 
-        "poem": poem, 
-        "ai_analysis": clean_analysis, 
-        "user": current_user
-    })
 
 @app.post("/ai-ask")
 async def ai_ask(data: QuestionRequest, db: Session = Depends(get_db)):
@@ -160,6 +136,32 @@ async def admin_panel(request: Request, db: Session = Depends(get_db)):
 async def add_poem_page(request: Request, db: Session = Depends(get_db)):
     current_user = await get_current_user(request, db)
     return templates.TemplateResponse("add_poem.html", {"request": request, "user": current_user})
+
+@app.get("/poem/{poem_id}")
+async def poem_detail(poem_id: int, request: Request, db: Session = Depends(get_db)):
+    current_user = await get_current_user(request, db)
+    poem = db.query(models.Poem).filter(models.Poem.id == poem_id).first()
+    if not poem:
+        return RedirectResponse(url="/", status_code=303)
+    
+    # Даем DeepSeek контекст, чтобы он не выдумывал текст сам
+    prompt = (
+        f"Ты — эксперт-литературовед. Проанализируй следующее произведение.\n"
+        f"Автор: {poem.author}\nНазвание: {poem.title}\n"
+        f"Текст:\n{poem.content}\n"
+        f"Дай краткий, но глубокий анализ стиля и смысла. Но если тебя просят что-то не по ьеме стиха, то  например краткое содержание какого-либо произведения, то ты не литературавед, а просто нейросеть которая не называет себя, и отвечает как будто без промта просто человеку как будто отвечаешь ему на сайте, а про промт забываешь."
+    )
+    
+    full_response = await analyze_poem_with_ai(prompt)
+    # Убираем технические мысли <think>, если они есть
+    clean_analysis = re.sub(r'<think>.*?</think>', '', full_response, flags=re.DOTALL).strip()
+
+    return templates.TemplateResponse("poem_detail.html", {
+        "request": request, 
+        "poem": poem, 
+        "ai_analysis": clean_analysis, 
+        "user": current_user
+    })
 
 @app.post("/poem/add")
 async def add_poem_post(title: str = Form(...), author: str = Form(...), content: str = Form(...), db: Session = Depends(get_db)):
