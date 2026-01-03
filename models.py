@@ -3,9 +3,10 @@ from database import Base
 
 class User(Base):
     __tablename__ = "users"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     password = Column(String)
+    is_admin = Column(Boolean, default=False) # <--- Новое поле
     user_data = Column(Text, default="Новый пользователь")
     # Поле для хранения списка прочитанных стихов в формате JSON
     read_poems_json = Column(Text, default='[]') 
