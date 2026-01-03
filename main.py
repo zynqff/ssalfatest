@@ -62,47 +62,32 @@ async def login_post(
 @app.get("/register")
 async def register_get(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
-
 @app.post("/register")
-async def register_post(
-    request: Request, 
-    username: str = Form(...), 
-    password: str = Form(...), 
-    db: Session = Depends(get_db)
-):
+async def register_post(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     try:
-        # Проверка на существование пользователя
+        # Проверяем, есть ли уже пользователи в базе
+        user_count = db.query(models.User).count()
+        
         existing_user = db.query(models.User).filter(models.User.username == username).first()
         if existing_user:
-            return templates.TemplateResponse("register.html", {
-                "request": request, 
-                "error": "Этот логин уже занят",
-                "msg_type": "error"
-            })
+            return templates.TemplateResponse("register.html", {"request": request, "error": "Этот логин уже занят"})
 
-        # Создание нового пользователя
+        # Первый зарегистрированный получает админку
+        is_first_user = True if user_count == 0 else False
+        
         new_user = models.User(
             username=username, 
-            password=get_password_hash(password)
+            password=get_password_hash(password),
+            is_admin=is_first_user # Назначаем админом, если он первый
         )
         db.add(new_user)
         db.commit()
         
-        # Регистрация прошла успешно -> на страницу входа с ЗЕЛЕНЫМ текстом
-        return templates.TemplateResponse("login.html", {
-            "request": request, 
-            "error": "Регистрация успешна! Теперь войдите.",
-            "msg_type": "success" # Тот самый зеленый цвет
-        })
-        
+        return templates.TemplateResponse("login.html", {"request": request, "error": "Регистрация успешна!", "msg_type": "success"})
     except Exception as e:
         db.rollback()
-        print(f"Database error: {e}")
-        return templates.TemplateResponse("register.html", {
-            "request": request, 
-            "error": "Ошибка базы данных. Попробуйте другой логин.",
-            "msg_type": "error"
-        })
+        return templates.TemplateResponse("register.html", {"request": request, "error": f"Ошибка: {e}"})
+        
 
 @app.get("/profile")
 async def profile_page(request: Request, db: Session = Depends(get_db)):
