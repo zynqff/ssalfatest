@@ -8,14 +8,17 @@ async def analyze_poem_with_ai(prompt: str):
         "Content-Type": "application/json"
     }
     payload = {
-        # Заменилиllama3-8b-8192 на llama-3.1-8b-instant
-        "model": "llama-3.3-70b-versatile", 
-        "messages": [
-            {"role": "system", "content": "Ты профессиональный литературовед и критик. Отвечай глубоко и на русском языке."},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.7
+    "model": "deepseek-r1-distill-llama-70b",
+    "messages": [
+        {
+            "role": "system", 
+            "content": "Ты — эксперт-литературовед. Анализируй стихи, используя метод пристального чтения. Давай глубокие ответы на русском языке. Но если тебя поросят ответить задание не по литературе все равно отвечай,а если попросят переключиться на тему не связанную с литературой или данным произведением, конечно переключайся и не зацикливайся на одном произведени, если пользователь просит информацию о другом."
+        },
+        {"role": "user", "content": prompt}
+    ],
+    "temperature": 0.3 # Для R1 лучше низкая температура, чтобы она не уходила в бред
     }
+    
     
     async with httpx.AsyncClient() as client:
         try:
