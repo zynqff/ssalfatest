@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -9,101 +10,124 @@
         :root {
             --accent: #00d4ff;
             --secondary: #9d50bb;
+            --error-red: #ff453a;
         }
 
         body {
-            background: #0d1117; /* Глубокий темный фон */
+            background: #0d1117;
             height: 100vh;
             margin: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             color: white;
-            position: relative;
             overflow: hidden;
+            position: relative;
         }
 
-        /* Светящееся пятно на фоне */
+        /* Фоновое свечение */
         .bg-glow {
             position: absolute;
             width: 600px;
             height: 600px;
             background: radial-gradient(circle, rgba(0, 212, 255, 0.15) 0%, transparent 70%);
-            border-radius: 50%;
             z-index: -1;
             filter: blur(60px);
+            animation: pulse 10s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); opacity: 0.5; }
+            to { transform: scale(1.2); opacity: 0.8; }
         }
 
         /* Стеклянная карточка */
         .glass-container {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
+            border-radius: 28px;
             padding: 40px;
             width: 100%;
-            max-width: 380px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            max-width: 400px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
             text-align: center;
         }
 
         h2 {
-            font-weight: 700;
+            font-weight: 800;
             margin-bottom: 30px;
             background: linear-gradient(to right, var(--accent), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        /* Поля ввода */
+        /* Красивая табличка ошибки */
+        .error-alert {
+            background: rgba(255, 69, 58, 0.1);
+            border: 1px solid rgba(255, 69, 58, 0.3);
+            border-radius: 15px;
+            color: var(--error-red);
+            padding: 12px;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        /* Инпуты */
         .form-control {
-            background: rgba(255, 255, 255, 0.08) !important;
+            background: rgba(255, 255, 255, 0.07) !important;
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
             color: white !important;
-            border-radius: 12px !important;
-            padding: 12px 15px !important;
+            border-radius: 15px !important;
+            padding: 14px 20px !important;
             margin-bottom: 15px !important;
-            transition: 0.3s;
         }
 
         .form-control:focus {
-            background: rgba(255, 255, 255, 0.12) !important;
             border-color: var(--accent) !important;
             box-shadow: 0 0 15px rgba(0, 212, 255, 0.2) !important;
-            outline: none;
         }
 
-        /* Кнопка */
         .btn-submit {
             background: linear-gradient(135deg, var(--accent), var(--secondary));
             border: none;
             color: white;
             width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            font-weight: 600;
+            padding: 15px;
+            border-radius: 15px;
+            font-weight: 700;
+            transition: 0.3s ease;
             margin-top: 10px;
-            transition: 0.3s;
         }
 
         .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
-            filter: brightness(1.1);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 212, 255, 0.3);
         }
 
-        .reg-link {
-            display: block;
+        .footer-link {
             margin-top: 25px;
-            color: rgba(255, 255, 255, 0.6);
-            text-decoration: none;
             font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
         }
 
-        .reg-link span {
+        .footer-link a {
             color: var(--accent);
+            text-decoration: none;
             font-weight: 600;
         }
     </style>
@@ -112,15 +136,24 @@
     <div class="bg-glow"></div>
     
     <div class="glass-container">
-        <h2>Авторизация</h2>
+        <h2>Войти</h2>
+
+        {% if error %}
+        <div class="error-alert">
+            <span>⚠️</span> {{ error }}
+        </div>
+        {% endif %}
+
         <form action="/login" method="post">
             <input type="text" name="username" class="form-control" placeholder="Логин" required>
             <input type="password" name="password" class="form-control" placeholder="Пароль" required>
-            <button type="submit" class="btn-submit">Войти</button>
+            <button type="submit" class="btn-submit">Войти в аккаунт</button>
         </form>
         
-        <a href="/register" class="reg-link">Нет аккаунта? <span>Регистрация</span></a>
+        <div class="footer-link">
+            Нет профиля? <a href="/register">Регистрация</a>
+        </div>
     </div>
 </body>
     </html>
-
+    
