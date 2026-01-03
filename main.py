@@ -122,4 +122,35 @@ async def logout():
     response = RedirectResponse(url="/login")
     response.delete_cookie("user_id")
     return response
+
+# Не забудь добавить Checkbox в импорты, если используешь его
+@app.post("/profile/update")
+async def update_profile(
+    request: Request, 
+    user_data: str = Form(...), 
+    show_all_tab: bool = Form(False), # False — значение по умолчанию, если галочка не стоит
+    db: Session = Depends(get_db)
+):
+    # 1. Проверяем авторизацию через куки
+    user_id = request.cookies.get("user_id")
+    if not user_id:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    # 2. Ищем пользователя в базе
+    user = db.query(models.User).filter(models.User.id == int(user_id)).first()
+    if user:
+        # 3. Обновляем данные
+        user.user_data = user_data
+        user.show_all_tab = show_all_tab
+        db.commit()
+
+    # 4. Возвращаемся обратно в профиль с сообщением об успехе
+    return templates.TemplateResponse("profile.html", {
+        "request": request,
+        "user_data": user.user_data,
+        "show_all_tab": user.show_all_tab,
+        "error": "Изменения успешно сохранены!",
+        "msg_type": "success" # Чтобы надпись была зеленой
+    })
+    
                               
