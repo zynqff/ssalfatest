@@ -9,7 +9,7 @@
         :root {
             --accent: #00d4ff;
             --secondary: #9d50bb;
-            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-bg: rgba(255, 255, 255, 0.03);
         }
 
         body {
@@ -19,27 +19,22 @@
             min-height: 100vh;
             margin: 0;
             padding-bottom: 50px;
+            overflow-x: hidden;
         }
 
-        /* Декоративные пятна на фоне */
-        .bg-glow-1 {
-            position: fixed; top: -10%; left: -10%; width: 50vw; height: 50vw;
-            background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
-            z-index: -1;
-        }
-        .bg-glow-2 {
-            position: fixed; bottom: -10%; right: -10%; width: 50vw; height: 50vw;
-            background: radial-gradient(circle, rgba(157, 80, 187, 0.1) 0%, transparent 70%);
-            z-index: -1;
-        }
+        /* Декоративные свечения */
+        .bg-glow-1 { position: fixed; top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(0, 212, 255, 0.07) 0%, transparent 70%); z-index: -1; }
+        .bg-glow-2 { position: fixed; bottom: -10%; right: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(157, 80, 187, 0.07) 0%, transparent 70%); z-index: -1; }
 
         /* Навигация */
         .navbar-custom {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.02);
             backdrop-filter: blur(15px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             padding: 15px 0;
-            margin-bottom: 40px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
         .brand-text {
@@ -48,74 +43,115 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-decoration: none;
-            font-size: 1.5rem;
+            font-size: 1.6rem;
         }
 
-        /* Стеклянные карточки */
+        /* Карточки стихов */
         .poem-card {
             background: var(--glass-bg);
             backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
             padding: 25px;
             height: 100%;
-            transition: 0.3s ease;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex;
             flex-direction: column;
+            position: relative;
         }
 
         .poem-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px);
             border-color: var(--accent);
-            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.15);
+            box-shadow: 0 15px 35px rgba(0, 212, 255, 0.15);
         }
 
         .poem-title {
             color: var(--accent);
             font-weight: 700;
             margin-bottom: 15px;
+            font-size: 1.3rem;
         }
 
         .poem-content {
             font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.8);
-            line-height: 1.6;
-            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.7;
+            margin-bottom: 25px;
             flex-grow: 1;
+            white-space: pre-wrap; /* Сохраняет переносы строк стиха */
         }
 
-        /* Кнопка */
-        .btn-action {
+        /* Кнопки */
+        .btn-main {
             background: linear-gradient(135deg, var(--accent), var(--secondary));
             border: none;
             color: white;
-            border-radius: 12px;
-            padding: 10px;
-            font-weight: 600;
+            border-radius: 14px;
+            padding: 10px 20px;
+            font-weight: 700;
             text-decoration: none;
             text-align: center;
             transition: 0.3s;
         }
 
-        .btn-action:hover {
+        .btn-main:hover {
             filter: brightness(1.2);
             color: white;
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
         }
 
-        .btn-profile {
-            border: 1px solid var(--accent);
-            color: var(--accent);
+        /* Админ-панель на карточке */
+        .admin-controls {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-outline-admin {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 0.85rem;
             border-radius: 10px;
-            padding: 5px 15px;
+            padding: 5px 12px;
             text-decoration: none;
-            font-size: 0.9rem;
             transition: 0.3s;
         }
 
-        .btn-profile:hover {
-            background: var(--accent);
-            color: #0d1117;
+        .btn-outline-admin:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent);
+        }
+
+        .btn-delete:hover {
+            border-color: #ff453a;
+            color: #ff453a;
+        }
+
+        .add-btn-fixed {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            text-decoration: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            z-index: 1001;
+            transition: 0.3s;
+        }
+
+        .add-btn-fixed:hover {
+            transform: scale(1.1) rotate(90deg);
+            color: white;
         }
     </style>
 </head>
@@ -126,12 +162,21 @@
     <nav class="navbar-custom">
         <div class="container d-flex justify-content-between align-items-center">
             <a href="/" class="brand-text">POETRY AI</a>
-            <a href="/profile" class="btn-profile">Профиль</a>
+            <div class="d-flex gap-3 align-items-center">
+                {% if user %}
+                    <a href="/profile" class="text-white text-decoration-none opacity-75">Профиль</a>
+                    <a href="/logout" class="btn btn-sm btn-outline-danger" style="border-radius: 10px;">Выйти</a>
+                {% else %}
+                    <a href="/login" class="btn-main py-2 px-4">Войти</a>
+                {% endif %}
+            </div>
         </div>
     </nav>
 
-    <div class="container">
-        <h2 class="text-center mb-5 fw-bold">Ваша лента</h2>
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <h2 class="fw-bold m-0">Поэтическая лента</h2>
+        </div>
         
         <div class="row g-4">
             {% for poem in poems %}
@@ -141,18 +186,31 @@
                     <p class="poem-content">
                         {{ poem.content[:150] }}{% if poem.content|length > 150 %}...{% endif %}
                     </p>
-                    <a href="/poem/{{ poem.id }}" class="btn-action">Открыть анализ</a>
+                    
+                    <a href="/poem/{{ poem.id }}" class="btn-main">Читать анализ</a>
+
+                    {% if user and user.is_admin %}
+                    <div class="admin-controls">
+                        <a href="/poem/edit/{{ poem.id }}" class="btn-outline-admin">✏️ Ред.</a>
+                        <a href="/poem/delete/{{ poem.id }}" class="btn-outline-admin btn-delete" onclick="return confirm('Удалить этот стих?')">🗑️ Удалить</a>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             {% else %}
-            <div class="col-12 text-center">
+            <div class="col-12 text-center py-5">
                 <div class="poem-card py-5">
-                    <p class="fs-5 opacity-50">Здесь пока пусто. Добавьте свои первые стихи!</p>
+                    <p class="fs-5 opacity-50">В ленте пока нет произведений.</p>
                 </div>
             </div>
             {% endfor %}
         </div>
     </div>
+
+    {% if user and user.is_admin %}
+    <a href="/poem/add" class="add-btn-fixed" title="Добавить стих">+</a>
+    {% endif %}
+
 </body>
 </html>
 
