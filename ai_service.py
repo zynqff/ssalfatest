@@ -9,7 +9,7 @@ async def analyze_poem_with_ai(prompt: str):
     }
     payload = {
         # Заменилиllama3-8b-8192 на llama-3.1-8b-instant
-        "model": "llama-4-scout-17b-16e-instruct", 
+        "model": "llama-3.3-70b-versatile", 
         "messages": [
             {"role": "system", "content": "Ты профессиональный литературовед и критик. Отвечай глубоко и на русском языке."},
             {"role": "user", "content": prompt}
