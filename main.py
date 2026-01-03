@@ -127,7 +127,8 @@ async def logout():
 @app.post("/profile/update")
 async def update_profile(
     request: Request, 
-    user_data: str = Form(""), # По умолчанию пустая строка, чтобы не было ошибки "Field required"
+    user_data: str = Form(""), 
+    new_password: str = Form(""), 
     show_all_tab: bool = Form(False), 
     db: Session = Depends(get_db)
 ):
@@ -137,15 +138,21 @@ async def update_profile(
 
     user = db.query(models.User).filter(models.User.id == int(user_id)).first()
     if user:
+        # Обновляем инфо о себе
         user.user_data = user_data
         user.show_all_tab = show_all_tab
+        
+        # Если ввели новый пароль — хешируем и сохраняем
+        if new_password.strip():
+            user.password = get_password_hash(new_password)
+            
         db.commit()
 
     return templates.TemplateResponse("profile.html", {
         "request": request,
         "user_data": user.user_data,
         "show_all_tab": user.show_all_tab,
-        "error": "Профиль успешно обновлен!",
+        "error": "Изменения успешно сохранены!",
         "msg_type": "success"
     })
     
