@@ -152,14 +152,45 @@ async def update_profile(
         "msg_type": "success"
     })
 
-@app.get("/poem/delete/{poem_id}")
-async def delete_poem(poem_id: int, request: Request, db: Session = Depends(get_db)):
+# --- АДМИН-ПАНЕЛЬ ---
+@app.get("/admin")
+async def admin_panel(request: Request, db: Session = Depends(get_db)):
     user_id = request.cookies.get("user_id")
-    user = db.query(models.User).filter(models.User.id == int(user_id)).first()
+    user = db.query(models.User).filter(models.User.id == int(user_id)).first() if user_id else None
     
     if not user or not user.is_admin:
-        return RedirectResponse(url="/", status_code=303) # Обычный юзер улетает на главную
-    
-    # Логика удаления...
+        return RedirectResponse(url="/", status_code=303)
 
+    poems = db.query(models.Poem).all()
+    # Считаем строки на лету
+    for poem in poems:
+        poem.line_count = len([line for line in poem.content.split('\n') if line.strip()])
+    
+    return templates.TemplateResponse("admin_panel.html", {"request": request, "poems": poems, "user": user})
+
+# --- ДОБАВЛЕНИЕ СТИХА ---
+@app.get("/poem/add")
+async def add_poem_page(request: Request):
+    return templates.TemplateResponse("add_poem.html", {"request": request})
+
+@app.post("/poem/add")
+async def add_poem_post(
+    title: str = Form(...), 
+    author: str = Form(...), 
+    content: str = Form(...), 
+    db: Session = Depends(get_db)
+):
+    new_poem = models.Poem(title=title, author=author, content=content)
+    db.add(new_poem)
+    db.commit()
+    return RedirectResponse(url="/admin", status_code=303)
+
+# --- УДАЛЕНИЕ ---
+@app.get("/poem/delete/{poem_id}")
+async def delete_poem(poem_id: int, db: Session = Depends(get_db)):
+    poem = db.query(models.Poem).filter(models.Poem.id == poem_id).first()
+    if poem:
+        db.delete(poem)
+        db.commit()
+    return RedirectResponse(url="/admin", status_code=303)
     
