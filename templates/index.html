@@ -6,59 +6,106 @@
     <title>Poetry AI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        :root { --accent: #00d4ff; --bg: #0d1117; }
-        body { background: var(--bg); color: white; font-family: sans-serif; }
-        .poem-card { 
-            background: rgba(255,255,255,0.05); 
-            border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 15px; 
-            padding: 15px; 
+        :root { --accent: #00d4ff; --secondary: #9d50bb; --bg: #0d1117; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; }
+        
+        /* Сетка плитки */
+        .poem-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; padding: 20px; }
+        
+        .poem-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             transition: 0.3s;
         }
-        .poem-card:hover { border-color: var(--accent); }
-        /* Стиль для модального окна */
-        .modal-content { background: #161b22; border: 1px solid var(--accent); border-radius: 20px; color: white; }
-        .poem-text-area { white-space: pre-wrap; margin: 20px 0; max-height: 300px; overflow-y: auto; font-style: italic; }
+        .poem-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+        .poem-title { color: var(--accent); font-weight: 700; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .poem-author { font-size: 0.8rem; opacity: 0.6; margin-bottom: 10px; }
+        
+        .btn-read { 
+            background: linear-gradient(135deg, var(--accent), var(--secondary)); 
+            border: none; color: white; border-radius: 10px; padding: 8px; font-weight: 600; font-size: 0.9rem;
+        }
+
+        /* Модальное окно (Стекло) */
+        .modal-content {
+            background: rgba(22, 27, 34, 0.95) !important;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 25px !important;
+            color: white;
+        }
+        .modal-header { border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .full-text { 
+            white-space: pre-wrap; /* Сохраняет абзацы */
+            font-size: 1.1rem; 
+            line-height: 1.6; 
+            max-height: 60vh; 
+            overflow-y: auto; 
+            padding: 10px;
+            margin: 15px 0;
+            border-left: 2px solid var(--accent);
+        }
+        
+        .modal-footer-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+        .btn-act { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; padding: 10px; transition: 0.2s; }
+        .btn-act:hover { background: rgba(255,255,255,0.1); }
+        .btn-ai-call { 
+            grid-column: span 2; 
+            background: linear-gradient(135deg, #f093fb, #f5576c); 
+            border: none; font-weight: 800; color: white; margin-top: 5px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container py-4">
-    <h2 class="mb-4">Ваша лента</h2>
-    <div class="row g-3">
+    <div class="d-flex justify-content-between align-items-center px-3 mb-4">
+        <h2 class="fw-bold m-0">Ваша лента</h2>
+        <a href="/admin" class="btn btn-sm btn-outline-secondary">⚙️</a>
+    </div>
+
+    <div class="poem-grid">
         {% for poem in poems %}
-        <div class="col-6 col-md-4">
-            <div class="poem-card">
-                <h5 class="text-truncate" style="color: var(--accent)">{{ poem.title }}</h5>
-                <p class="small opacity-50">{{ poem.author }}</p>
-                <button class="btn btn-sm btn-outline-info w-100" 
-                        onclick="openModal('{{ poem.title }}', '{{ poem.author }}', `{{ poem.content }}`, '{{ poem.id }}')">
-                    Читать
-                </button>
+        <div class="poem-card">
+            <div>
+                <div class="poem-title">{{ poem.title }}</div>
+                <div class="poem-author">{{ poem.author }}</div>
             </div>
+            <button class="btn-read" onclick="viewPoem('{{ poem.id }}')">Читать</button>
+            
+            <script id="data-{{ poem.id }}" type="application/json">
+                {
+                    "title": "{{ poem.title }}",
+                    "author": "{{ poem.author }}",
+                    "content": {{ poem.content | tojson }}
+                }
+            </script>
         </div>
-        {% else %}
-        <p class="opacity-50">Стихов пока нет. Добавьте их в админке.</p>
         {% endfor %}
     </div>
 </div>
 
-<div class="modal fade" id="readModal" tabindex="-1">
+<div class="modal fade" id="poemModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content p-3">
+        <div class="modal-content p-2">
             <div class="modal-header border-0">
-                <h5 id="m-title" class="modal-title"></h5>
+                <h5 class="modal-title" id="m-title"></h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div id="m-author" class="small px-3 text-info"></div>
             <div class="modal-body">
-                <div id="m-text" class="poem-text-area"></div>
-            </div>
-            <div class="modal-footer border-0 d-flex flex-column">
-                <a id="m-ai-btn" href="#" class="btn btn-primary w-100" style="background: linear-gradient(to right, #00d4ff, #9d50bb); border: none;">🧠 ИИ Анализ (Groq)</a>
-                <div class="d-flex w-100 gap-2 mt-2">
-                    <button class="btn btn-dark flex-grow-1">📌 Закрепить</button>
-                    <button class="btn btn-dark flex-grow-1">✔️ Прочитано</button>
+                <div id="m-author" class="text-info small mb-2"></div>
+                <div id="m-text" class="full-text"></div>
+                
+                <div class="modal-footer-btns mt-3">
+                    <button class="btn-act">📌 Закрепить</button>
+                    <button class="btn-act">✔️ Прочитано</button>
+                    <a id="m-ai-link" href="#" class="btn btn-act btn-ai-call">🧠 ИИ Анализ (Groq)</a>
                 </div>
             </div>
         </div>
@@ -67,14 +114,16 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    function openModal(title, author, content, id) {
-        document.getElementById('m-title').innerText = title;
-        document.getElementById('m-author').innerText = author;
-        document.getElementById('m-text').innerText = content;
-        document.getElementById('m-ai-btn').href = '/poem/' + id;
-        new bootstrap.Modal(document.getElementById('readModal')).show();
+    function viewPoem(id) {
+        const data = JSON.parse(document.getElementById('data-' + id).textContent);
+        document.getElementById('m-title').innerText = data.title;
+        document.getElementById('m-author').innerText = 'Автор: ' + data.author;
+        document.getElementById('m-text').innerText = data.content;
+        document.getElementById('m-ai-link').href = '/poem/' + id;
+        
+        new bootstrap.Modal(document.getElementById('poemModal')).show();
     }
 </script>
 </body>
-</html>
+    </html>
 
