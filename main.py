@@ -12,7 +12,7 @@ from pydantic import BaseModel
 class QuestionRequest(BaseModel):
     question: str
     poem_id: int
-# Импортируем твой файл
+
 # Инициализация базы данных
 models.Base.metadata.create_all(bind=engine)
 
@@ -32,27 +32,28 @@ def get_password_hash(password):
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
+async def get_current_user(request: Request, db: Session):
+    user_id = request.cookies.get("user_id")
+    if user_id:
+        return db.query(models.User).filter(models.User.id == int(user_id)).first()
+    return None
+
 # --- РОУТЫ ---
 
 @app.get("/")
 async def index_page(request: Request, db: Session = Depends(get_db)):
     poems = db.query(models.Poem).all()
-    
-    # Проверяем, админ ли текущий пользователь
-    user_id = request.cookies.get("user_id")
-    current_user = None
-    if user_id:
-        current_user = db.query(models.User).filter(models.User.id == int(user_id)).first()
-    
+    current_user = await get_current_user(request, db)
     return templates.TemplateResponse("index.html", {
         "request": request, 
         "poems": poems, 
-        "user": current_user # Передаем юзера в шаблон
+        "user": current_user 
     })
-    
+
 @app.get("/login")
-async def login_get(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+async def login_get(request: Request, db: Session = Depends(get_db)):
+    current_user = await get_current_user(request, db)
+    return templates.TemplateResponse("login.html", {"request": request, "user": current_user})
 
 @app.post("/login")
 async def login_post(
@@ -62,70 +63,51 @@ async def login_post(
     db: Session = Depends(get_db)
 ):
     user = db.query(models.User).filter(models.User.username == username).first()
-    
-    # Проверяем логин и пароль
     if not user or not verify_password(password, user.password):
         return templates.TemplateResponse("login.html", {
             "request": request, 
             "error": "Неверный логин или пароль",
-            "msg_type": "error" # Красный цвет
+            "user": None
         })
     
-    # Успешный вход
     response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(key="user_id", value=str(user.id))
     return response
 
 @app.get("/register")
-async def register_get(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
+async def register_get(request: Request, db: Session = Depends(get_db)):
+    current_user = await get_current_user(request, db)
+    return templates.TemplateResponse("register.html", {"request": request, "user": current_user})
+
 @app.post("/register")
 async def register_post(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
-    try:
-        # Проверяем, есть ли уже пользователи в базе
-        user_count = db.query(models.User).count()
-        
-        existing_user = db.query(models.User).filter(models.User.username == username).first()
-        if existing_user:
-            return templates.TemplateResponse("register.html", {"request": request, "error": "Этот логин уже занят"})
+    user_count = db.query(models.User).count()
+    existing_user = db.query(models.User).filter(models.User.username == username).first()
+    if existing_user:
+        return templates.TemplateResponse("register.html", {"request": request, "error": "Этот логин уже занят", "user": None})
 
-        # Первый зарегистрированный получает админку
-        is_first_user = True if user_count == 0 else False
-        
-        new_user = models.User(
-            username=username, 
-            password=get_password_hash(password),
-            is_admin=is_first_user # Назначаем админом, если он первый
-        )
-        db.add(new_user)
-        db.commit()
-        
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Регистрация успешна!", "msg_type": "success"})
-    except Exception as e:
-        db.rollback()
-        return templates.TemplateResponse("register.html", {"request": request, "error": f"Ошибка: {e}"})
-        
+    new_user = models.User(
+        username=username, 
+        password=get_password_hash(password),
+        is_admin=(user_count == 0)
+    )
+    db.add(new_user)
+    db.commit()
+    return templates.TemplateResponse("login.html", {"request": request, "error": "Регистрация успешна!", "msg_type": "success", "user": None})
 
 @app.get("/profile")
 async def profile_page(request: Request, db: Session = Depends(get_db)):
-    user_id = request.cookies.get("user_id")
-    if not user_id:
+    current_user = await get_current_user(request, db)
+    if not current_user:
         return RedirectResponse(url="/login")
         
-    user = db.query(models.User).filter(models.User.id == int(user_id)).first()
     return templates.TemplateResponse("profile.html", {
         "request": request, 
-        "user_data": user.user_data if user else "",
-        "show_all_tab": user.show_all_tab if user else True
+        "user": current_user,
+        "user_data": current_user.user_data or "",
+        "show_all_tab": current_user.show_all_tab
     })
 
-@app.get("/logout")
-async def logout():
-    response = RedirectResponse(url="/login")
-    response.delete_cookie("user_id")
-    return response
-
-# Не забудь добавить Checkbox в импорты, если используешь его
 @app.post("/profile/update")
 async def update_profile(
     request: Request, 
@@ -134,74 +116,51 @@ async def update_profile(
     show_all_tab: bool = Form(False), 
     db: Session = Depends(get_db)
 ):
-    user_id = request.cookies.get("user_id")
-    if not user_id:
+    current_user = await get_current_user(request, db)
+    if not current_user:
         return RedirectResponse(url="/login", status_code=303)
 
-    user = db.query(models.User).filter(models.User.id == int(user_id)).first()
-    if user:
-        # Обновляем инфо о себе
-        user.user_data = user_data
-        user.show_all_tab = show_all_tab
-        
-        # Если ввели новый пароль — хешируем и сохраняем
-        if new_password.strip():
-            user.password = get_password_hash(new_password)
-            
-        db.commit()
+    current_user.user_data = user_data
+    current_user.show_all_tab = show_all_tab
+    if new_password.strip():
+        current_user.password = get_password_hash(new_password)
+    db.commit()
 
     return templates.TemplateResponse("profile.html", {
         "request": request,
-        "user_data": user.user_data,
-        "show_all_tab": user.show_all_tab,
-        "error": "Изменения успешно сохранены!",
-        "msg_type": "success"
+        "user": current_user,
+        "user_data": current_user.user_data,
+        "show_all_tab": current_user.show_all_tab,
+        "error": "Изменения сохранены!"
     })
 
-# --- АДМИН-ПАНЕЛЬ ---
 @app.get("/admin")
 async def admin_panel(request: Request, db: Session = Depends(get_db)):
-    user_id = request.cookies.get("user_id")
-    user = db.query(models.User).filter(models.User.id == int(user_id)).first() if user_id else None
-    
-    if not user or not user.is_admin:
+    current_user = await get_current_user(request, db)
+    if not current_user or not current_user.is_admin:
         return RedirectResponse(url="/", status_code=303)
 
     poems = db.query(models.Poem).all()
-    # Считаем строки на лету
-    for poem in poems:
-        poem.line_count = len([line for line in poem.content.split('\n') if line.strip()])
-    
-    return templates.TemplateResponse("admin_panel.html", {"request": request, "poems": poems, "user": user})
+    return templates.TemplateResponse("admin_panel.html", {"request": request, "poems": poems, "user": current_user})
 
-# --- ДОБАВЛЕНИЕ СТИХА ---
 @app.get("/poem/add")
-async def add_poem_page(request: Request):
-    return templates.TemplateResponse("add_poem.html", {"request": request})
+async def add_poem_page(request: Request, db: Session = Depends(get_db)):
+    current_user = await get_current_user(request, db)
+    return templates.TemplateResponse("add_poem.html", {"request": request, "user": current_user})
 
 @app.post("/poem/add")
-async def add_poem_post(
-    title: str = Form(...), 
-    author: str = Form(...), 
-    content: str = Form(...), 
-    db: Session = Depends(get_db)
-):
-    try:
-        new_poem = models.Poem(
-            title=title, 
-            author=author, 
-            content=content
-        )
-        db.add(new_poem)
-        db.commit()
-        return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
-    except Exception as e:
-        db.rollback()
-        print(f"Ошибка при добавлении: {e}")
-        return "Ошибка базы данных. Возможно, нужно удалить старый файл .db и перезапустить сервер."
-    
+async def add_poem_post(title: str = Form(...), author: str = Form(...), content: str = Form(...), db: Session = Depends(get_db)):
+    new_poem = models.Poem(title=title, author=author, content=content)
+    db.add(new_poem)
+    db.commit()
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 
-# --- УДАЛЕНИЕ ---
+@app.get("/poem/edit/{poem_id}")
+async def edit_poem_page(poem_id: int, request: Request, db: Session = Depends(get_db)):
+    current_user = await get_current_user(request, db)
+    poem = db.query(models.Poem).filter(models.Poem.id == poem_id).first()
+    return templates.TemplateResponse("add_poem.html", {"request": request, "user": current_user, "poem": poem, "edit_mode": True})
+
 @app.get("/poem/delete/{poem_id}")
 async def delete_poem(poem_id: int, db: Session = Depends(get_db)):
     poem = db.query(models.Poem).filter(models.Poem.id == poem_id).first()
@@ -213,35 +172,24 @@ async def delete_poem(poem_id: int, db: Session = Depends(get_db)):
 @app.get("/poem/{poem_id}")
 async def poem_detail(poem_id: int, request: Request, db: Session = Depends(get_db)):
     poem = db.query(models.Poem).filter(models.Poem.id == poem_id).first()
-    if not poem:
-        return "Стих не найден", 404
-
-    # Формируем запрос для Groq на основе данных из БД
-    prompt = f"Проанализируй стихотворение '{poem.title}' автора {poem.author}. Текст:\n\n{poem.content}"
+    if not poem: return "Стих не найден", 404
     
-    # Вызываем твою функцию из ai_service.py
-    ai_response = await analyze_poem_with_ai(prompt)
-
-    # Получаем юзера для корректного отображения навбара
-    user_id = request.cookies.get("user_id")
-    current_user = None
-    if user_id:
-        current_user = db.query(models.User).filter(models.User.id == int(user_id)).first()
+    current_user = await get_current_user(request, db)
+    ai_response = await analyze_poem_with_ai(f"Проанализируй: {poem.content}")
 
     return templates.TemplateResponse("poem_detail.html", {
-        "request": request,
-        "poem": poem,
-        "ai_analysis": ai_response,
-        "user": current_user
+        "request": request, "poem": poem, "ai_analysis": ai_response, "user": current_user
     })
+
 @app.post("/ai-ask")
 async def ai_ask(data: QuestionRequest, db: Session = Depends(get_db)):
     poem = db.query(models.Poem).filter(models.Poem.id == data.poem_id).first()
-    
-    # Формируем контекст: текст стиха + твой новый вопрос
-    full_prompt = f"Контекст (стих): {poem.content}\n\nВопрос пользователя: {data.question}"
-    
-    # Используем твою функцию из ai_service.py
-    answer = await analyze_poem_with_ai(full_prompt) 
-    
+    answer = await analyze_poem_with_ai(f"Стих: {poem.content}\nВопрос: {data.question}") 
     return {"answer": answer}
+
+@app.get("/logout")
+async def logout():
+    response = RedirectResponse(url="/login")
+    response.delete_cookie("user_id")
+    return response
+                     
