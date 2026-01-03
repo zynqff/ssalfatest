@@ -5,7 +5,7 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     username = Column(String, unique=True, index=True)
-    password_hash = Column(String)
+    password = Column(String)
     user_data = Column(Text, default="Новый пользователь")
     # Поле для хранения списка прочитанных стихов в формате JSON
     read_poems_json = Column(Text, default='[]') 
