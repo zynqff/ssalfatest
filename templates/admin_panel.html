@@ -2,47 +2,93 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Админ-панель</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель | Poetry AI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #0d1117; color: white; }
-        .glass-table { background: rgba(255, 255, 255, 0.03); border-radius: 20px; padding: 25px; border: 1px solid rgba(255,255,255,0.1); }
-        .table { color: white !important; }
-        .btn-add { background: linear-gradient(135deg, #00d4ff, #9d50bb); border: none; color: white; border-radius: 10px; font-weight: 700; }
+        :root { --accent: #00d4ff; --secondary: #9d50bb; }
+        body { background: #0d1117; color: white; font-family: 'Segoe UI', sans-serif; min-height: 100vh; padding: 20px; }
+        
+        /* Стеклянный контейнер */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        h2 { background: linear-gradient(to right, var(--accent), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
+
+        /* Стилизация таблицы (самое важное!) */
+        .table { color: white !important; margin-top: 20px; border-color: rgba(255, 255, 255, 0.1) !important; }
+        .table thead th { 
+            background: rgba(255, 255, 255, 0.05) !important; 
+            color: var(--accent) !important; 
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3) !important;
+            padding: 15px;
+        }
+        .table tbody td { padding: 15px; vertical-align: middle; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        /* Кнопки */
+        .btn-add { background: linear-gradient(135deg, var(--accent), var(--secondary)); border: none; color: white; border-radius: 12px; font-weight: 700; padding: 10px 20px; transition: 0.3s; }
+        .btn-add:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(0, 212, 255, 0.4); color: white; }
+        
+        .btn-action { border-radius: 10px; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; transition: 0.2s; }
+        .btn-edit { border: 1px solid #ffcc00; color: #ffcc00; }
+        .btn-edit:hover { background: #ffcc00; color: #000; }
+        .btn-del { border: 1px solid #ff453a; color: #ff453a; }
+        .btn-del:hover { background: #ff453a; color: #fff; }
+
+        .line-badge { background: rgba(0, 212, 255, 0.1); color: var(--accent); padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; }
     </style>
 </head>
-<body class="p-5">
-    <div class="container glass-table">
-        <div class="d-flex justify-content-between mb-4">
-            <h2>Управление контентом</h2>
-            <a href="/poem/add" class="btn btn-add px-4">+ Добавить стих</a>
+<body>
+    <div class="container-fluid">
+        <div class="glass-panel">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                <h2>Управление контентом</h2>
+                <a href="/poem/add" class="btn-add">+ Добавить стих</a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Название</th>
+                            <th>Автор</th>
+                            <th>Строк</th>
+                            <th class="text-end">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for poem in poems %}
+                        <tr>
+                            <td><span class="opacity-50 small">{{ poem.id }}</span></td>
+                            <td class="fw-bold">{{ poem.title }}</td>
+                            <td><span class="opacity-75">{{ poem.author }}</span></td>
+                            <td><span class="line-badge">{{ poem.line_count }}</span></td>
+                            <td class="text-end">
+                                <a href="/poem/edit/{{ poem.id }}" class="btn-action btn-edit me-2">✏️</a>
+                                <a href="/poem/delete/{{ poem.id }}" class="btn-action btn-del" onclick="return confirm('Удалить этот стих?')">🗑️</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 opacity-50">Стихов пока нет...</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-4">
+                <a href="/" class="text-decoration-none" style="color: var(--accent);">← Вернуться в ленту</a>
+            </div>
         </div>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Название</th>
-                    <th>Автор</th>
-                    <th>Строк</th>
-                    <th class="text-end">Действия</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for poem in poems %}
-                <tr class="align-middle">
-                    <td>{{ poem.id }}</td>
-                    <td class="text-info">{{ poem.title }}</td>
-                    <td>{{ poem.author }}</td>
-                    <td>{{ poem.line_count }}</td>
-                    <td class="text-end">
-                        <a href="/poem/edit/{{ poem.id }}" class="btn btn-sm btn-outline-warning me-2">✏️</a>
-                        <a href="/poem/delete/{{ poem.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить?')">🗑️</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <a href="/" class="text-muted text-decoration-none">← В ленту</a>
     </div>
 </body>
-</html>
+    </html>
+    
