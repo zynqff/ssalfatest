@@ -31,8 +31,19 @@ def verify_password(plain_password, hashed_password):
 @app.get("/")
 async def index_page(request: Request, db: Session = Depends(get_db)):
     poems = db.query(models.Poem).all()
-    return templates.TemplateResponse("index.html", {"request": request, "poems": poems})
-
+    
+    # Проверяем, админ ли текущий пользователь
+    user_id = request.cookies.get("user_id")
+    current_user = None
+    if user_id:
+        current_user = db.query(models.User).filter(models.User.id == int(user_id)).first()
+    
+    return templates.TemplateResponse("index.html", {
+        "request": request, 
+        "poems": poems, 
+        "user": current_user # Передаем юзера в шаблон
+    })
+    
 @app.get("/login")
 async def login_get(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
@@ -140,4 +151,15 @@ async def update_profile(
         "error": "Изменения успешно сохранены!",
         "msg_type": "success"
     })
+
+@app.get("/poem/delete/{poem_id}")
+async def delete_poem(poem_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = request.cookies.get("user_id")
+    user = db.query(models.User).filter(models.User.id == int(user_id)).first()
+    
+    if not user or not user.is_admin:
+        return RedirectResponse(url="/", status_code=303) # Обычный юзер улетает на главную
+    
+    # Логика удаления...
+
     
