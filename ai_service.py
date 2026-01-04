@@ -1,39 +1,38 @@
-import httpx
-from config import settings
+import os
+import google.generativeai as genai
+from dotenv import load_dotenv
 
-async def analyze_poem_with_ai(prompt: str):
-    url = "https://api.groq.com/openai/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        # Используем Qwen 3 для лучшего анализа русского стиха
-        "model": "qwen/qwen3-32b", 
-        "messages": [
-            {
-                "role": "system",
-            "content": "Ты — эксперт-литературовед. Анализируй стихи, используя метод пристального чтения. Давай глубокие ответы на русском языке. Но если тебя поросят ответить задание не по литературе все равно отвечай,а если попросят переключиться на тему не связанную с литературой или данным произведением, конечно переключайся и не зацикливайся на одном произведени, если пользователь просит информацию о другом."
-        },
-        {"role": "user", "content": prompt}
-    ],
-    "temperature": 0.4 # Для R1 лучше низкая температура, чтобы она не уходила в бред
-    }
-    
-    
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(url, headers=headers, json=payload, timeout=25.0)
-            data = response.json()
-            
-            if "error" in data:
-                return f"Ошибка API Groq: {data['error'].get('message', 'Неизвестная ошибка')}"
-            
-            if "choices" in data and len(data["choices"]) > 0:
-                return data['choices'][0]['message']['content']
-            
-            return f"Неожиданный формат ответа: {data}"
-            
-        except Exception as e:
-            return f"Ошибка соединения: {str(e)}"
-    
+load_dotenv()
+
+# Настройка Gemini
+api_key = os.getenv("GOOGLE_API_KEY")
+genai.configure(api_key=api_key)
+
+async def analyze_poem_with_chat(poem_content: str, user_query: str, chat_history: list = None):
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # Превращаем историю из БД в формат, который понимает Gemini
+        # Роли в Gemini: 'user' и 'model' (вместо 'assistant')
+        history_for_gemini = []
+        if chat_history:
+            for msg in chat_history:
+                role = "user" if msg.role == "user" else "model"
+                history_for_gemini.append({"role": role, "parts": [msg.content]})
+        
+        # Инструкция для ИИ
+        system_instruction = (
+            f"Ты — литературный помощник. Мы обсуждаем стихотворение:\n{poem_content}\n"
+            "Отвечай на основе текста и предыдущего диалога."
+        )
+
+        # Запускаем чат с историей
+        chat = model.start_chat(history=history_for_gemini)
+        
+        # Отправляем сообщение
+        response = chat.send_message(user_query)
+        
+        return response.text
+    except Exception as e:
+        return f"Ошибка ИИ: {str(e)}"
+                
