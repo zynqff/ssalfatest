@@ -135,7 +135,12 @@ async def admin_panel(request: Request, db: Session = Depends(get_db)):
 @app.get("/poem/add")
 async def add_poem_page(request: Request, db: Session = Depends(get_db)):
     current_user = await get_current_user(request, db)
-    return templates.TemplateResponse("add_poem.html", {"request": request, "user": current_user})
+    return templates.TemplateResponse("add_poem.html", {
+        "request": request, 
+        "user": current_user, 
+        "poem": None, 
+        "edit_mode": False
+    })
 
 @app.get("/poem/{poem_id}")
 async def poem_detail(poem_id: int, request: Request, db: Session = Depends(get_db)):
@@ -177,3 +182,15 @@ async def delete_poem(poem_id: int, db: Session = Depends(get_db)):
         db.commit()
     return RedirectResponse(url="/admin", status_code=303)
 
+@app.get("/poem/edit/{poem_id}")
+async def edit_poem_page(poem_id: int, request: Request, db: Session = Depends(get_db)):
+    current_user = await get_current_user(request, db)
+    poem = db.query(models.Poem).filter(models.Poem.id == poem_id).first()
+    
+    # Мы передаем edit_mode=True, чтобы шаблон понял, что нужно показывать данные
+    return templates.TemplateResponse("add_poem.html", {
+        "request": request, 
+        "user": current_user, 
+        "poem": poem, 
+        "edit_mode": True
+    })
