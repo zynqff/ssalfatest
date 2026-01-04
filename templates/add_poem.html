@@ -1,26 +1,38 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-7">
-        <div class="p-4 p-md-5" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 30px;">
-            <h3 class="mb-4" style="font-weight: 800; color: var(--accent);">Новое произведение</h3>
-            <form action="/poem/add" method="post">
-                <div class="mb-3">
-                    <label class="form-label">Название стихотворения:</label>
-                    <input type="text" name="title" class="form-control bg-dark text-white border-secondary" style="border-radius: 15px;" placeholder="Напр: Зимнее утро" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Автор:</label>
-                    <input type="text" name="author" class="form-control bg-dark text-white border-secondary" style="border-radius: 15px;" placeholder="Напр: А.С. Пушкин" required>
-                </div>
-                <div class="mb-4">
-                    <label class="form-label">Текст:</label>
-                    <textarea name="content" class="form-control bg-dark text-white border-secondary" style="border-radius: 20px;" rows="8" placeholder="Вставьте текст стихотворения здесь..." required></textarea>
-                </div>
-                <button type="submit" class="btn-custom w-100 py-3">🚀 Опубликовать в ленту</button>
-            </form>
-        </div>
+<div class="container mt-5">
+    <div class="glass-card p-4 mx-auto" style="max-width: 700px;">
+        <h2 class="text-center mb-4">
+            {% if edit_mode %}📝 Редактирование{% else %}🚀 Новый стих{% endif %}
+        </h2>
+
+        <form action="{% if edit_mode %}/poem/edit/{{ poem.id }}{% else %}/poem/add{% endif %}" method="post">
+            
+            <div class="mb-3">
+                <label class="form-label">Название стихотворения</label>
+                <input type="text" name="title" class="form-control" 
+                       value="{{ poem.title if poem else '' }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Автор</label>
+                <input type="text" name="author" class="form-control" 
+                       value="{{ poem.author if poem else '' }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Текст произведения</label>
+                <textarea name="content" class="form-control" rows="12" required>{{ poem.content if poem else '' }}</textarea>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">
+                    {% if edit_mode %}💾 Сохранить изменения{% else %}➕ Опубликовать{% endif %}
+                </button>
+                <a href="/admin" class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}
