@@ -59,18 +59,7 @@ async def index_page(request: Request, db: Session = Depends(get_db)):
 
 
 
-@app.post("/ai-ask")
-async def ai_ask(data: QuestionRequest, db: Session = Depends(get_db)):
-    poem = db.query(models.Poem).filter(models.Poem.id == data.poem_id).first()
-    
-    # Передаем вопрос вместе с текстом стиха для точности
-    chat_prompt = f"Текст стиха: {poem.content}\nВопрос пользователя: {data.question}"
-    full_answer = await analyze_poem_with_ai(chat_prompt)
-    
-    # Очистка для DeepSeek
-    clean_answer = re.sub(r'<think>.*?</think>', '', full_answer, flags=re.DOTALL).strip()
-    
-    return {"answer": clean_answer}
+
 
 # --- АВТОРИЗАЦИЯ ---
 
@@ -146,28 +135,64 @@ async def add_poem_page(request: Request, db: Session = Depends(get_db)):
 async def poem_detail(poem_id: int, request: Request, db: Session = Depends(get_db)):
     current_user = await get_current_user(request, db)
     poem = db.query(models.Poem).filter(models.Poem.id == poem_id).first()
+    
     if not poem:
         return RedirectResponse(url="/", status_code=303)
-    
-    # Даем DeepSeek контекст, чтобы он не выдумывал текст сам
-    prompt = (
-        f"Ты — эксперт-литературовед. Проанализируй следующее произведение.\n"
-        f"Автор: {poem.author}\nНазвание: {poem.title}\n"
-        f"Текст:\n{poem.content}\n"
-        f"Дай краткий, но глубокий анализ стиля и смысла. Но если тебя просят что-то не по ьеме стиха, то  например краткое содержание какого-либо произведения, то ты не литературавед, а просто нейросеть которая не называет себя, и отвечает как будто без промта просто человеку как будто отвечаешь ему на сайте, а про промт забываешь."
-    )
-    
-    full_response = await analyze_poem_with_ai(prompt)
-    # Убираем технические мысли <think>, если они есть
-    clean_analysis = re.sub(r'<think>.*?</think>', '', full_response, flags=re.DOTALL).strip()
+
+    # Получаем историю сообщений (последние 20), если пользователь залогинен
+    history = []
+    if current_user:
+        history = db.query(models.ChatMessage).filter(
+            models.ChatMessage.poem_id == poem_id,
+            models.ChatMessage.user_id == current_user.id
+        ).order_by(models.ChatMessage.created_at.asc()).all()
 
     return templates.TemplateResponse("poem_detail.html", {
-        "request": request, 
-        "poem": poem, 
-        "ai_analysis": clean_analysis, 
-        "user": current_user
+        "request": request,
+        "poem": poem,
+        "user": current_user,
+        "chat_history": history  # Передаем историю в шаблон
     })
 
+# Роут для отправки сообщения в чат
+@app.post("/ai-ask")
+async def ai_ask(data: QuestionRequest, db: Session = Depends(get_db), request: Request = None):
+    current_user = await get_current_user(request, db)
+    if not current_user:
+        return {"answer": "Пожалуйста, войдите в систему."}
+
+    poem = db.query(models.Poem).filter(models.Poem.id == data.poem_id).first()
+    
+    # 1. Загружаем прошлую историю для контекста ИИ
+    history = db.query(models.ChatMessage).filter(
+        models.ChatMessage.poem_id == data.poem_id,
+        models.ChatMessage.user_id == current_user.id
+    ).all()
+
+    # 2. Сохраняем вопрос пользователя в базу
+    user_msg = models.ChatMessage(
+        user_id=current_user.id,
+        poem_id=data.poem_id,
+        role="user",
+        content=data.question
+    )
+    db.add(user_msg)
+    
+    # 3. Запрос к ИИ с учетом истории
+    answer = await analyze_poem_with_chat(poem.content, data.question, history)
+
+    # 4. Сохраняем ответ ИИ в базу
+    ai_msg = models.ChatMessage(
+        user_id=current_user.id,
+        poem_id=data.poem_id,
+        role="assistant",
+        content=answer
+    )
+    db.add(ai_msg)
+    db.commit()
+
+    return {"answer": answer}
+            
 @app.post("/poem/add")
 async def add_poem_post(title: str = Form(...), author: str = Form(...), content: str = Form(...), db: Session = Depends(get_db)):
     db.add(models.Poem(title=title, author=author, content=content))
