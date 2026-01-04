@@ -21,4 +21,13 @@ class Poem(Base):
     title = Column(String, index=True)
     author = Column(String, index=True) # Поле автора
     content = Column(Text)              # Поле текста (теперь без ошибок)
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    poem_id = Column(Integer, ForeignKey("poems.id"))
+    role = Column(String)  # "user" или "assistant"
+    content = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
     
