@@ -7,3 +7,9 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     username: str
     password: str
+
+# Добавь это для чата:
+class ChatQuestion(BaseModel):
+    question: str
+    poem_id: int
+    
