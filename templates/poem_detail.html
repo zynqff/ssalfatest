@@ -1,84 +1,69 @@
 {% extends "base.html" %}
-
-{% block title %}{{ poem.title }} | Анализ ИИ{% endblock %}
-
-{% block extra_style %}
-<style>
-    .chat-container { height: 65vh; display: flex; flex-direction: column; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 30px; overflow: hidden; }
-    .chat-messages { flex-grow: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
-    .msg { padding: 15px 20px; border-radius: 20px; max-width: 85%; line-height: 1.5; }
-    .ai-msg { background: rgba(0, 212, 255, 0.07); border: 1px solid rgba(0, 212, 255, 0.2); align-self: flex-start; color: #e0faff; }
-    .user-msg { background: linear-gradient(135deg, var(--accent), var(--secondary)); align-self: flex-end; color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-    .chat-input-area { padding: 20px; background: rgba(13,17,23,0.6); border-top: 1px solid var(--border); }
-    .custom-input { background: rgba(255,255,255,0.05) !important; border: 1px solid var(--border) !important; color: white !important; border-radius: 20px !important; padding: 12px 20px !important; }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="row">
-    <div class="col-lg-4 mb-4">
-        <div class="p-4" style="background: var(--glass); border: 1px solid var(--border); border-radius: 30px;">
-            <h3 style="color: var(--accent);">{{ poem.title }}</h3>
-            <p class="text-info small mb-3">Автор: {{ poem.author }}</p>
-            <div style="white-space: pre-wrap; font-style: italic; opacity: 0.8; font-size: 0.95rem;">{{ poem.content }}</div>
-        </div>
-    </div>
-
-    <div class="col-lg-8">
-        <div class="chat-container">
-            <div class="chat-messages" id="chat-box">
-                <div class="msg ai-msg">
-                    <strong>Анализ ИИ:</strong><br>
-                    {{ ai_analysis }}
-                </div>
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-3 border-end" style="height: 80vh; overflow-y: auto;">
+            <h5>История обсуждения</h5>
+            <div class="list-group list-group-flush">
+                {% for msg in chat_history if msg.role == 'user' %}
+                    <div class="list-group-item list-group-item-action small text-truncate">
+                        {{ msg.content }}
+                    </div>
+                {% else %}
+                    <p class="text-muted small">Здесь появятся ваши вопросы</p>
+                {% endfor %}
             </div>
-            
-            <div class="chat-input-area">
-                <div class="input-group">
-                    <input type="text" id="user-question" class="form-control custom-input" placeholder="Спросите ИИ об этом стихе...">
-                    <button class="btn-custom ms-2" onclick="sendQuestion()">Отправить</button>
-                </div>
+        </div>
+
+        <div class="col-md-9">
+            <h2>{{ poem.title }}</h2>
+            <p class="text-muted">{{ poem.author }}</p>
+            <pre class="poem-text" style="white-space: pre-wrap;">{{ poem.content }}</pre>
+
+            <hr>
+
+            <div id="chat-window" class="mb-3" style="height: 400px; overflow-y: auto; background: #f8f9fa; padding: 15px; border-radius: 10px;">
+                {% for msg in chat_history %}
+                    <div class="mb-2 {{ 'text-end' if msg.role == 'user' else '' }}">
+                        <span class="badge {{ 'bg-primary' if msg.role == 'user' else 'bg-secondary' }}">
+                            {{ 'Вы' if msg.role == 'user' else 'ИИ' }}
+                        </span>
+                        <div class="p-2 d-inline-block rounded {{ 'bg-light border' if msg.role == 'user' else 'bg-white shadow-sm' }}" style="max-width: 80%;">
+                            {{ msg.content }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="input-group mb-3">
+                <input type="text" id="user-question" class="form-control" placeholder="Задайте вопрос по стиху...">
+                <button class="btn btn-primary" onclick="askAI()">Отправить</button>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_script %}
 <script>
-    async function sendQuestion() {
-        const input = document.getElementById('user-question');
-        const chatBox = document.getElementById('chat-box');
-        const question = input.value.trim();
-        
-        if (!question) return;
+async def askAI() {
+    const question = document.getElementById('user-question').value;
+    const chatWindow = document.getElementById('chat-window');
+    
+    // Добавляем сообщение пользователя визуально
+    chatWindow.innerHTML += `<div class="text-end mb-2"><span class="badge bg-primary">Вы</span><div class="p-2 d-inline-block bg-light border rounded">${question}</div></div>`;
+    document.getElementById('user-question').value = '';
 
-        // 1. Отображаем вопрос пользователя
-        chatBox.innerHTML += `<div class="msg user-msg">${question}</div>`;
-        input.value = '';
-        chatBox.scrollTo(0, chatBox.scrollHeight);
-
-        // 2. Отправляем запрос на сервер
-        try {
-            const response = await fetch('/ai-ask', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ "question": question, "poem_id": {{ poem.id }} })
-            });
-            const data = await response.json();
-            
-            // 3. Отображаем ответ ИИ
-            chatBox.innerHTML += `<div class="msg ai-msg"><strong>Groq AI:</strong><br>${data.answer}</div>`;
-            chatBox.scrollTo(0, chatBox.scrollHeight);
-        } catch (e) {
-            chatBox.innerHTML += `<div class="msg ai-msg text-danger">Ошибка связи с сервером.</div>`;
-        }
-    }
-
-    // Отправка по нажатию Enter
-    document.getElementById('user-question').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') sendQuestion();
+    const response = await fetch('/ai-ask', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({question: question, poem_id: {{ poem.id }}})
     });
+    
+    const data = await response.json();
+    
+    // Добавляем ответ ИИ
+    chatWindow.innerHTML += `<div class="mb-2"><span class="badge bg-secondary">ИИ</span><div class="p-2 d-inline-block bg-white shadow-sm rounded">${data.answer}</div></div>`;
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+}
 </script>
 {% endblock %}
-
+                    
