@@ -1,0 +1,12 @@
+# Aider
+.aider*
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment
+.env
+
+# Database
+database.db

@@ -23,15 +23,35 @@ async def login_handler(request: Request, username: str = Form(...), password: s
     response.set_cookie(key="user_id", value=str(user.id))
     return response
 
+@router.get("/register")
+async def register_page(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
+
 @router.post("/register")
-async def register_handler(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+async def register_handler(
+    request: Request, 
+    username: str = Form(...), 
+    password: str = Form(...), 
+    db: Session = Depends(get_db)
+):
+    # Проверяем уникальность логина
     if db.query(models.User).filter(models.User.username == username).first():
-        return templates.TemplateResponse("register.html", {"request": request, "error": "Логин занят"})
+        return templates.TemplateResponse("register.html", {"request": request, "error": "Этот логин уже занят"})
     
-    new_user = models.User(username=username, hashed_password=hash_password(password))
+    # Проверяем, есть ли уже пользователи в базе
+    is_first_user = db.query(models.User).first() is None
+
+    # Создаем нового пользователя
+    new_user = models.User(
+        username=username, 
+        hashed_password=hash_password(password),
+        is_admin=is_first_user # Если это первый пользователь, он становится админом
+    )
     db.add(new_user)
     db.commit()
-    return RedirectResponse(url="/auth/login", status_code=status.HTTP_303_SEE_OTHER)
+    
+    # Перенаправляем на страницу входа после успешной регистрации
+    return RedirectResponse(url="/auth/login?registered=true", status_code=status.HTTP_303_SEE_OTHER)
 
 @router.get("/logout")
 async def logout():

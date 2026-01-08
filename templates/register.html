@@ -5,7 +5,7 @@
     <div class="p-4 p-md-5" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 30px; width: 100%; max-width: 400px; backdrop-filter: blur(20px);">
         <h2 class="text-center mb-4" style="font-weight: 800; background: linear-gradient(to right, var(--accent), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Регистрация</h2>
 
-        <form action="/register" method="post">
+        <form action="/auth/register" method="post">
             <div class="mb-3">
                 <label class="form-label ps-2">Логин (никнейм):</label>
                 <input type="text" name="username" class="form-control" placeholder="Придумайте логин" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; border-radius: 15px; padding: 12px;" required>
@@ -19,7 +19,7 @@
 
         <div class="mt-4 text-center">
             <span class="opacity-50 small">Уже есть аккаунт?</span> 
-            <a href="/login" class="small text-info text-decoration-none">Войти</a>
+            <a href="/auth/login" class="small text-info text-decoration-none">Войти</a>
         </div>
     </div>
 </div>

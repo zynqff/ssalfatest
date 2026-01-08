@@ -3,7 +3,7 @@
 <div class="p-4" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 30px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Управление</h2>
-        <a href="/poem/add" class="btn-custom">+ Добавить</a>
+        <a href="/admin/poem/add" class="btn-custom">+ Добавить</a>
     </div>
     <div class="table-responsive" style="border-radius: 20px; overflow: hidden;">
         <table class="table table-dark table-hover m-0">
@@ -20,8 +20,8 @@
                     <td>{{ poem.title }}</td>
                     <td>{{ poem.author }}</td>
                     <td class="text-end">
-                        <a href="/poem/edit/{{ poem.id }}" class="btn btn-sm btn-outline-info me-2">✏️</a>
-                        <a href="/poem/delete/{{ poem.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить?')">🗑️</a>
+                        <a href="/admin/poem/edit/{{ poem.id }}" class="btn btn-sm btn-outline-info me-2">✏️</a>
+                        <a href="/admin/poem/delete/{{ poem.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить?')">🗑️</a>
                     </td>
                 </tr>
                 {% endfor %}

@@ -4,24 +4,25 @@
     <div class="col-md-6">
         <div class="p-4" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 30px;">
             <h2 class="mb-4">Мой профиль</h2>
-            <form action="/profile/update" method="post">
+            
+            {% if error %}
+            <div class="alert alert-danger small p-2 text-center">{{ error }}</div>
+            {% endif %}
+
+            <form action="/profile" method="post">
                 <div class="mb-3">
                     <label class="form-label opacity-50">Имя пользователя</label>
-                    <input type="text" class="form-control bg-dark text-white border-secondary" value="{{ user.username }}" disabled>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">О себе</label>
-                    <textarea name="user_data" class="form-control bg-dark text-white border-secondary" rows="3">{{ user.user_data or '' }}</textarea>
+                    <input type="text" class="form-control" value="{{ user.username }}" disabled style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white;">
                 </div>
                 <hr class="opacity-25 my-4">
                 <div class="mb-4">
                     <label class="form-label">Новый пароль</label>
-                    <input type="password" name="new_password" class="form-control bg-dark text-white border-secondary" placeholder="Оставьте пустым, чтобы не менять">
+                    <input type="password" name="new_password" class="form-control" placeholder="Оставьте пустым, чтобы не менять" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white;">
                 </div>
                 <button type="submit" class="btn-custom w-100">💾 Сохранить изменения</button>
             </form>
             <div class="mt-4 text-center">
-                <a href="/logout" class="text-danger text-decoration-none small">Выйти из аккаунта</a>
+                <a href="/auth/logout" class="text-danger text-decoration-none small">Выйти из аккаунта</a>
             </div>
         </div>
     </div>

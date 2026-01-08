@@ -10,22 +10,26 @@ genai.configure(api_key=api_key)
 
 async def analyze_poem_with_chat(poem_content: str, user_query: str, chat_history: list = None):
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Инструкция для ИИ
+        system_instruction = (
+            f"Ты — эрудированный и дружелюбный литературный критик. Твоя задача — помочь пользователю глубже понять произведение. "
+            f"Мы обсуждаем стихотворение:\n\n---\n{poem_content}\n---\n\n"
+            "Всегда отвечай по существу, основываясь на тексте произведения и контексте диалога. Будь вежлив и поддерживай беседу."
+        )
+
+        model = genai.GenerativeModel(
+            'gemini-1.0-pro',
+            system_instruction=system_instruction
+        )
         
         # Превращаем историю из БД в формат, который понимает Gemini
-        # Роли в Gemini: 'user' и 'model' (вместо 'assistant')
         history_for_gemini = []
         if chat_history:
             for msg in chat_history:
+                # Роли в Gemini: 'user' и 'model'
                 role = "user" if msg.role == "user" else "model"
                 history_for_gemini.append({"role": role, "parts": [msg.content]})
         
-        # Инструкция для ИИ
-        system_instruction = (
-            f"Ты — литературный помощник. Мы обсуждаем стихотворение:\n{poem_content}\n"
-            "Отвечай на основе текста и предыдущего диалога."
-        )
-
         # Запускаем чат с историей
         chat = model.start_chat(history=history_for_gemini)
         
@@ -34,5 +38,7 @@ async def analyze_poem_with_chat(poem_content: str, user_query: str, chat_histor
         
         return response.text
     except Exception as e:
-        return f"Ошибка ИИ: {str(e)}"
+        # Улучшаем обработку ошибок
+        print(f"AI Service Error: {e}")
+        return "К сожалению, произошла ошибка при обращении к нейросети. Попробуйте еще раз позже."
                 

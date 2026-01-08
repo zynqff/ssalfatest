@@ -11,7 +11,13 @@
             </div>
         {% endif %}
 
-        <form action="/login" method="post">
+        {% if request.query_params.get('registered') %}
+            <div class="alert p-2 mb-3 text-center small" style="background: rgba(48, 209, 88, 0.1); border: 1px solid rgba(48, 209, 88, 0.3); color: #30d158; border-radius: 12px;">
+                Регистрация прошла успешно! Теперь вы можете войти.
+            </div>
+        {% endif %}
+
+        <form action="/auth/login" method="post">
             <div class="mb-3">
                 <label class="form-label ps-2">Логин:</label>
                 <input type="text" name="username" class="form-control" placeholder="Введите ваш логин" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; border-radius: 15px; padding: 12px;" required>
@@ -25,7 +31,7 @@
         
         <div class="mt-4 text-center">
             <span class="opacity-50 small">Нет аккаунта?</span> 
-            <a href="/register" class="small text-info text-decoration-none">Создать профиль</a>
+            <a href="/auth/register" class="small text-info text-decoration-none">Создать профиль</a>
         </div>
     </div>
 </div>

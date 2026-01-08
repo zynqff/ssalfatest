@@ -8,10 +8,10 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "super-secret-key-change-me-in-production"
     ALGORITHM: str = "HS256"
     # ЭТОЙ СТРОКИ НЕ ХВАТАЛО:
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30 
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # API ключи
-    GROQ_API_KEY: str = ""
+    # Ключ для Google Gemini API (должен быть в .env файле)
+    GOOGLE_API_KEY: str = ""
 
     class Config:
         env_file = ".env"

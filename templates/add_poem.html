@@ -7,7 +7,7 @@
             {% if edit_mode %}📝 Редактирование{% else %}🚀 Новый стих{% endif %}
         </h2>
 
-        <form action="{% if edit_mode %}/poem/edit/{{ poem.id }}{% else %}/poem/add{% endif %}" method="post">
+        <form action="{% if edit_mode %}/admin/poem/edit/{{ poem.id }}{% else %}/admin/poem/add{% endif %}" method="post">
             
             <div class="mb-3">
                 <label class="form-label">Название стихотворения</label>

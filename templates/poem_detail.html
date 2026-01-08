@@ -20,39 +20,47 @@
             <p class="text-muted">{{ poem.author }}</p>
             <pre class="poem-text" style="white-space: pre-wrap;">{{ poem.content }}</pre>
 
-            <hr>
+            <hr class="opacity-50">
 
-            <div id="chat-window" class="mb-3" style="height: 400px; overflow-y: auto; background: #f8f9fa; padding: 15px; border-radius: 10px;">
+            <div id="chat-window" class="mb-3 p-3" style="height: 400px; overflow-y: auto; background: rgba(13,17,23,0.7); border: 1px solid var(--border); border-radius: 20px;">
                 {% for msg in chat_history %}
                     <div class="mb-2 {{ 'text-end' if msg.role == 'user' else '' }}">
-                        <span class="badge {{ 'bg-primary' if msg.role == 'user' else 'bg-secondary' }}">
-                            {{ 'Вы' if msg.role == 'user' else 'ИИ' }}
-                        </span>
-                        <div class="p-2 d-inline-block rounded {{ 'bg-light border' if msg.role == 'user' else 'bg-white shadow-sm' }}" style="max-width: 80%;">
-                            {{ msg.content }}
+                        <div class="p-2 d-inline-block rounded-3" style="max-width: 80%; background: {{ 'rgba(0, 212, 255, 0.1)' if msg.role == 'user' else 'rgba(255, 255, 255, 0.05)' }}; border: 1px solid {{ 'rgba(0, 212, 255, 0.2)' if msg.role == 'user' else 'var(--border)' }};">
+                            <div class="small fw-bold mb-1" style="color: {{ 'var(--accent)' if msg.role == 'user' else 'var(--secondary)' }}">{{ 'Вы' if msg.role == 'user' else 'Poetry AI' }}</div>
+                            <div>{{ msg.content }}</div>
                         </div>
                     </div>
                 {% endfor %}
             </div>
 
-            <div class="input-group mb-3">
-                <input type="text" id="user-question" class="form-control" placeholder="Задайте вопрос по стиху...">
-                <button class="btn btn-primary" onclick="askAI()">Отправить</button>
+            <div class="input-group">
+                <input type="text" id="user-question" class="form-control" placeholder="Задайте вопрос по стиху..." style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; border-radius: 15px 0 0 15px; padding: 12px;">
+                <button class="btn btn-custom" onclick="askAI()" style="border-radius: 0 15px 15px 0;">Отправить</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-async def askAI() {
-    const question = document.getElementById('user-question').value;
+async function askAI() {
+    const questionInput = document.getElementById('user-question');
+    const question = questionInput.value;
+    if (!question) return; // Не отправлять пустые сообщения
+
     const chatWindow = document.getElementById('chat-window');
     
     // Добавляем сообщение пользователя визуально
-    chatWindow.innerHTML += `<div class="text-end mb-2"><span class="badge bg-primary">Вы</span><div class="p-2 d-inline-block bg-light border rounded">${question}</div></div>`;
-    document.getElementById('user-question').value = '';
+    const userMsgHtml = `<div class="mb-2 text-end">
+        <div class="p-2 d-inline-block rounded-3" style="max-width: 80%; background: rgba(0, 212, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.2);">
+            <div class="small fw-bold mb-1" style="color: var(--accent)">Вы</div>
+            <div>${question}</div>
+        </div>
+    </div>`;
+    chatWindow.insertAdjacentHTML('beforeend', userMsgHtml);
+    questionInput.value = '';
+    chatWindow.scrollTop = chatWindow.scrollHeight;
 
-    const response = await fetch('/ai-ask', {
+    const response = await fetch('/poem/ai-ask', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({question: question, poem_id: {{ poem.id }}})
@@ -61,9 +69,23 @@ async def askAI() {
     const data = await response.json();
     
     // Добавляем ответ ИИ
-    chatWindow.innerHTML += `<div class="mb-2"><span class="badge bg-secondary">ИИ</span><div class="p-2 d-inline-block bg-white shadow-sm rounded">${data.answer}</div></div>`;
+    const aiMsgHtml = `<div class="mb-2">
+        <div class="p-2 d-inline-block rounded-3" style="max-width: 80%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border);">
+            <div class="small fw-bold mb-1" style="color: var(--secondary)">Poetry AI</div>
+            <div>${data.answer}</div>
+        </div>
+    </div>`;
+    chatWindow.insertAdjacentHTML('beforeend', aiMsgHtml);
     chatWindow.scrollTop = chatWindow.scrollHeight;
 }
+
+// Добавим обработчик для нажатия Enter в поле ввода
+document.getElementById('user-question').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+        e.preventDefault(); // Предотвратить стандартное поведение (например, отправку формы)
+        askAI();
+    }
+});
 </script>
 {% endblock %}
                     

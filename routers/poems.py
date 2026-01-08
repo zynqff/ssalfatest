@@ -1,22 +1,25 @@
-from fastapi import APIRouter, Depends, Request, Form, status
+from fastapi import APIRouter, Depends, Request, Form, status, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from database import get_db
-from ai_service import analyze_poem_with_chat # Твой новый ИИ сервис
+from ai_service import analyze_poem_with_chat
 import models, schemas
+from dependencies import get_current_user
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-async def get_user_from_request(request: Request, db: Session):
-    user_id = request.cookies.get("user_id")
-    return db.query(models.User).filter(models.User.id == int(user_id)).first() if user_id else None
-
 @router.get("/{poem_id}")
-async def poem_detail(poem_id: int, request: Request, db: Session = Depends(get_db)):
-    user = await get_user_from_request(request, db)
+async def poem_detail(
+    request: Request,
+    poem_id: int, 
+    db: Session = Depends(get_db), 
+    user: models.User = Depends(get_current_user)
+):
     poem = db.query(models.Poem).filter(models.Poem.id == poem_id).first()
+    if not poem:
+        raise HTTPException(status_code=404, detail="Poem not found")
     
     # Загружаем историю из ChatMessage
     history = []
@@ -31,12 +34,18 @@ async def poem_detail(poem_id: int, request: Request, db: Session = Depends(get_
     })
 
 @router.post("/ai-ask")
-async def ask_ai(data: schemas.ChatQuestion, request: Request, db: Session = Depends(get_db)):
-    user = await get_user_from_request(request, db)
+async def ask_ai(
+    data: schemas.ChatQuestion, 
+    db: Session = Depends(get_db), 
+    user: models.User = Depends(get_current_user)
+):
     if not user:
-        return {"answer": "Сначала войдите в систему."}
+        raise HTTPException(status_code=401, detail="Сначала войдите в систему.")
 
     poem = db.query(models.Poem).filter(models.Poem.id == data.poem_id).first()
+    if not poem:
+        raise HTTPException(status_code=404, detail="Poem not found")
+
     history = db.query(models.ChatMessage).filter(
         models.ChatMessage.poem_id == data.poem_id,
         models.ChatMessage.user_id == user.id
