@@ -17,7 +17,7 @@ templates = Jinja2Templates(directory="templates")
 
 # Подключаем модули из папки routers
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
-app.include_router(poems.router, prefix="/poem", tags=["Poems"])
+app.include_router(poems.router, tags=["Poems"])
 app.include_router(users.router, tags=["Users"]) # Профиль пользователя
 app.include_router(admin.router) # Панель администратора
 

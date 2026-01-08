@@ -11,5 +11,5 @@ class UserLogin(BaseModel):
 # Добавь это для чата:
 class ChatQuestion(BaseModel):
     question: str
-    poem_id: int
+    session_id: str
     
