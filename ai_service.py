@@ -18,7 +18,7 @@ async def analyze_poem_with_chat(poem_content: str, user_query: str, chat_histor
         )
 
         model = genai.GenerativeModel(
-            'gemini-1.0-pro',
+            'gemini-3-flash-preview',
             system_instruction=system_instruction
         )
         
